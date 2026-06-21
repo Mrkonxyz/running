@@ -114,7 +114,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                     <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ก้าวขึ้นกล่องสลับข้างกัน เพื่อเสริมกล้ามเนื้อรอบข้อต่อสะบ้าเข่าอย่างปลอดภัย</span>
                   </div>
                 </div>
-                <VideoPlayer videoId="kYJ6J-Q6i8M" />
+                <VideoPlayer videoId="dQqApCGd5Ss" />
               </div>
 
               {/* 3. Calf Raises */}
@@ -135,7 +135,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                     <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> เขย่งส้นเท้าขาเดียวขึ้นสุดลงสุด เพื่อป้องกันน่องล้าและเกิดตะคริวในสนามเทรล</span>
                   </div>
                 </div>
-                <VideoPlayer videoId="Jb-vU6a64R8" />
+                <VideoPlayer videoId="3UWi44yN-wM" />
               </div>
             </div>
           </div>
@@ -163,7 +163,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                     <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นอนหงายชันเข่า ดันดัมเบลขึ้นตรง ผ่อนลงช้าๆ ศอกแตะพื้นมุม 45°-60° (เซฟไหล่และข้อมือได้ดี)</span>
                   </div>
                 </div>
-                <VideoPlayer videoId="kR2e_G6h7XU" />
+                <VideoPlayer videoId="uUGDRwge4F8" />
               </div>
 
               {/* Lateral Raises */}
@@ -190,7 +190,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                     <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ยืนหรือนั่งหลังตรง กางแขนขนานพื้น งอศอกเล็กน้อย ผ่อนลงช้าๆ (สร้างไหล่กลม กว้าง บาลานซ์สัดส่วน)</span>
                   </div>
                 </div>
-                <VideoPlayer videoId="5r8Oa7_V5oE" />
+                <VideoPlayer videoId="3VcKaXpzqRo" />
               </div>
 
               {/* Rear Delt Fly */}
@@ -213,7 +213,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                     <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งก้มตัว กางแขนขึ้นด้านข้างเยื้องหลัง บีบสะบักเข้าหาคู่ (แก้ไหล่ห่อ ประคองหลังเวลาเดินชัน)</span>
                   </div>
                 </div>
-                <VideoPlayer videoId="kY0R8-9k_6Q" />
+                <VideoPlayer videoId="buuYPLVXsJg" />
               </div>
 
               {/* Overhead Tricep Extension */}
@@ -307,7 +307,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                 <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งพิงพนัก ดันดัมเบลสองข้างขึ้นตรง ผ่อนลงช้าๆ ศอกตั้งฉาก 90° (ช่วยเซฟหลังล่างและหัวเข่า 100%)</span>
               </div>
             </div>
-            <VideoPlayer videoId="Xh0QoE0y60U" />
+            <VideoPlayer videoId="qEwKCR5JCog" />
           </div>
 
           {/* One-Arm Row */}
@@ -332,7 +332,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                 <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ชันเข่าและมือขวาบนม้านั่ง ก้มตัวขนานพื้น ดึงดัมเบลซ้ายขึ้นหนีบศอก (เสริมหลังหนา รองรับเป้น้ำเป้วิ่งเทรล)</span>
               </div>
             </div>
-            <VideoPlayer videoId="kY31WnS4B58" />
+            <VideoPlayer videoId="PgpQ4-jHiq4" />
           </div>
 
           {/* Incline Pushups */}
@@ -354,7 +354,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                 <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> วิดพื้นวางมือบนเก้าอี้ ลำตัวเกร็งตรง (ลดภาระน้ำหนักตัว 86.8 กก. บนข้อมือและข้อศอก สร้างอกสวยงาม)</span>
               </div>
             </div>
-            <VideoPlayer videoId="kY-U9-xN8Lg" />
+            <VideoPlayer videoId="cfns5VDVVvk" />
           </div>
 
           {/* Bicep Curls */}
@@ -398,7 +398,7 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
                 <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งริมเก้าอี้ มือจับขอบ เอนตัวหลังตรงเกร็งท้อง ดึงเข่าสองข้างหาอก ยืดเหยียดขาสลับเข้าออก (เซฟหลังล่างได้ 100%)</span>
               </div>
             </div>
-            <VideoPlayer videoId="Tm3P82oHn4k" />
+            <VideoPlayer videoId="HR_1AqBmVAU" />
           </div>
         </div>
       </div>
