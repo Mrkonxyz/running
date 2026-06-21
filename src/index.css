@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-pocariBlue: #0052cc;
+  --color-pocariLight: #00a3bf;
+  --color-mountainDark: #172b4d;
+  --color-treadmillGreen: #36b37e;
+  --color-peakRed: #ff5630;
+}
+
+:root {
+  font-family: 'Prompt', sans-serif;
+  background-color: #f4f5f7;
+}
+
+/* Custom Exercise Animations */
+@keyframes pressMotion {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+.animate-press {
+    animation: pressMotion 2s ease-in-out infinite;
+}
+
+@keyframes raiseMotionLeft {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-50deg); }
+}
+.animate-raise-left {
+    animation: raiseMotionLeft 2s ease-in-out infinite;
+    transform-origin: 50px 35px;
+}
+
+@keyframes raiseMotionRight {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(50deg); }
+}
+.animate-raise-right {
+    animation: raiseMotionRight 2s ease-in-out infinite;
+    transform-origin: 50px 35px;
+}
+
+@keyframes curlMotion {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-80deg); }
+}
+.animate-curl {
+    animation: curlMotion 1.8s ease-in-out infinite;
+    transform-origin: 48px 50px;
+}
+
+@keyframes rowMotion {
+    0%, 100% { transform: translateY(5px); }
+    50% { transform: translateY(-6px); }
+}
+.animate-row {
+    animation: rowMotion 2s ease-in-out infinite;
+}
+
+@keyframes squatMotion {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(10px) scaleY(0.8); }
+}
+.animate-squat {
+    animation: squatMotion 2.2s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+
+@keyframes stepMotion {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+.animate-step {
+    animation: stepMotion 2.4s ease-in-out infinite;
+}
+
+@keyframes calfMotion {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+.animate-calf {
+    animation: calfMotion 1.6s ease-in-out infinite;
+}
+
+@keyframes tuckMotion {
+    0%, 100% { transform: scaleX(1) translateX(0); }
+    50% { transform: scaleX(0.75) translateX(-6px); }
+}
+.animate-tuck {
+    animation: tuckMotion 2.2s ease-in-out infinite;
+    transform-origin: 45px 60px;
+}
