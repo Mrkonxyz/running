@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { resolveSessionFromCookies } from "../lib/auth.js";
 import { getDb } from "../lib/mongodb.js";
+import { getMergedPlansForUser } from "../lib/plans-store.js";
 import { TrainingHubApp } from "../components/TrainingHubApp.jsx";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export default async function HomePage() {
   let initialUser = null;
   let initialSession = null;
   let initialProgressByPlan = {};
+  let initialPlans = null;
 
   try {
     const cookieStore = await cookies();
@@ -18,13 +20,14 @@ export default async function HomePage() {
       initialSession = resolved.session;
 
       const db = await getDb();
-      const progressDocs = await db
-        .collection("user_progress")
-        .find({ email: resolved.user.email })
-        .toArray();
+      const [progressDocs, mergedPlans] = await Promise.all([
+        db.collection("user_progress").find({ email: resolved.user.email }).toArray(),
+        getMergedPlansForUser(resolved.user.email, db),
+      ]);
       for (const doc of progressDocs) {
         initialProgressByPlan[doc.planId] = doc.completedDays || {};
       }
+      initialPlans = mergedPlans;
     }
   } catch {
     // Graceful fallback if cookies or DB temporarily unavailable during initial SSR
@@ -35,6 +38,7 @@ export default async function HomePage() {
       initialUser={initialUser}
       initialSession={initialSession}
       initialProgressByPlan={initialProgressByPlan}
+      initialPlans={initialPlans}
     />
   );
 }

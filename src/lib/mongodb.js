@@ -33,13 +33,16 @@ export async function getDb() {
 }
 
 export async function ensureDatabaseSetup(db) {
-  if (!globalThis._mongoSetupPromise) {
-    globalThis._mongoSetupPromise = (async () => {
+  if (!globalThis._mongoSetupPromiseV2) {
+    globalThis._mongoSetupPromiseV2 = (async () => {
       await Promise.all([
         db.collection("users").createIndex({ email: 1 }, { unique: true }),
         db.collection("sessions").createIndex({ sessionId: 1 }, { unique: true }),
         db.collection("sessions").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
         db.collection("user_progress").createIndex({ email: 1, planId: 1 }, { unique: true }),
+        db.collection("user_plans").createIndex({ email: 1, id: 1 }, { unique: true }),
+        db.collection("mcp_tokens").createIndex({ tokenHash: 1 }, { unique: true }),
+        db.collection("mcp_tokens").createIndex({ email: 1, revokedAt: 1 }),
         db.collection("plans").createIndex({ id: 1 }, { unique: true }),
       ]);
 
@@ -67,9 +70,9 @@ export async function ensureDatabaseSetup(db) {
         );
       }
     })().catch((err) => {
-      globalThis._mongoSetupPromise = null;
+      globalThis._mongoSetupPromiseV2 = null;
       throw err;
     });
   }
-  return globalThis._mongoSetupPromise;
+  return globalThis._mongoSetupPromiseV2;
 }
