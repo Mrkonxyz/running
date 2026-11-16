@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-// Video Player Subcomponent
 function VideoPlayer({ videoId }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center pl-[60px] pr-1">
-        <button 
-          onClick={() => setIsOpen(!isOpen)} 
+        <button
+          onClick={() => setIsOpen(!isOpen)}
           className={`px-2 py-0.5 rounded text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${
             isOpen ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-pocariBlue/10 text-pocariBlue hover:bg-pocariBlue/20'
           }`}
         >
           {isOpen ? '✕ ปิดวิดีโอ' : '📹 ดูวิดีโอสาธิต'}
         </button>
-        <a 
-          href={`https://www.youtube.com/watch?v=${videoId}`} 
-          target="_blank" 
+        <a
+          href={`https://www.youtube.com/watch?v=${videoId}`}
+          target="_blank"
           rel="noopener noreferrer"
           className="text-[10px] text-gray-400 hover:text-pocariBlue transition flex items-center gap-0.5"
         >
@@ -27,16 +26,33 @@ function VideoPlayer({ videoId }) {
       {isOpen && (
         <div className="mt-2 pl-[60px]">
           <div className="video-player-container">
-            <iframe 
-              className="w-full aspect-video rounded-lg border border-slate-700" 
+            <iframe
+              className="w-full aspect-video rounded-lg border border-slate-700"
               src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`}
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             ></iframe>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ExerciseCard({ title, detail, svgContent, videoId, bgClass = "bg-purple-50/20 border-purple-100/50" }) {
+  return (
+    <div className={`exercise-card ${bgClass} p-2.5 rounded-xl border flex flex-col gap-1.5`}>
+      <div className="flex gap-3 items-center">
+        <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
+          {svgContent}
+        </div>
+        <div className="text-xs text-slate-800 flex-grow">
+          <b className="text-xs block">{title}</b>
+          <span className="text-gray-500 block text-[11px] mt-0.5">{detail}</span>
+        </div>
+      </div>
+      {videoId && <VideoPlayer videoId={videoId} />}
     </div>
   );
 }
@@ -49,384 +65,283 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
   let bodyHTML = null;
 
   const wObj = weeklyData.find(d => d.week === weekNum);
+  const isPhase0 = wObj?.phase === 'recovery';
 
   if (type === 'easy') {
-    labelTxt = "Aerobic Base";
-    titleTxt = "วิ่งถนนโซน 2 รักษาหัวใจต่ำ";
+    labelTxt = "อังคาร • Chill Z2 Cardio";
+    titleTxt = "Chill Z2 Easy Run (Zero Pace Pressure)";
     bodyHTML = (
-      <div>
-        <p className="text-xs text-gray-500 mb-3"><b>🎯 วัตถุประสงค์:</b> สร้างความคงทนให้หัวใจและปอดโดยไม่เกิดความเครียดต่อโครงสร้างกล้ามเนื้อมากเกินไป</p>
-        <p className="text-xs text-slate-700 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-          <b>📋 วิธีซ้อมปฏิบัติ (60 นาที):</b> วิ่งจ๊อกเบา ๆ บนพื้นราบที่ความเข้มข้นต่ำ คุยไปวิ่งไปได้โดยไม่ติดขัด แนะนำให้พยายามรักษาจังหวะรอบขา (Cadence) ให้อยู่ระหว่าง 170-180 ครั้งต่อนาทีเพื่อเซฟข้อต่อ
+      <div className="space-y-3">
+        <p className="text-xs text-gray-500">
+          <b>🎯 วัตถุประสงค์:</b> เผาผลาญไขมันสูงสุด (FatMax) และรักษาฐานความอึดโดยไม่ทำลายกล้ามเนื้อ (Zero Interference Effect)
         </p>
+        <div className="text-xs text-slate-700 bg-blue-50/50 p-3 rounded-xl border border-blue-100 space-y-1.5">
+          <p><b>📋 เป้าหมายสัปดาห์นี้:</b> <span className="font-bold text-pocariBlue">{wObj?.tueTarget}</span></p>
+          <p>• <b>โซนหัวใจหลัก:</b> True Zone 2 (<b>136 – 150 bpm</b> | เน้น FatMax 136–146 bpm)</p>
+          <p>• <b>ความเร็ว & ความชัน:</b> ไม่ต้องสนเพซ (7:15–8:30 /km ได้หมด) ลู่ตั้งชัน <b>0.5%</b> หรือวิ่งทางราบสวนสาธารณะ</p>
+          <p>• <b>รอบขา:</b> ก้าวสั้นนุ่มลงใต้สะโพก รอบขาธรรมชาติ <b>168–174 spm</b> เพื่อถนอมหน้าเข่า</p>
+        </div>
+        <div className="text-xs text-slate-600 bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+          <b>🥗 โภชนาการวันอังคาร (Cardio Fuel):</b> <b>2,050–2,150 kcal</b> | โปรตีน 150–170g | คาร์บปานกลาง 185–215g
+        </div>
       </div>
     );
   } else if (type === 'str') {
-    labelTxt = "Lower & Upper Strength";
-    titleTxt = "เวทเข่าเฟิร์ม + เวทช่วงบนเสริมความหนา";
+    labelTxt = "พุธ • Strength Day A (55–60 นาที)";
+    titleTxt = "Lower Knee Armor + Upper Push/Pull Thickness";
     bodyHTML = (
-      <div>
-        <p className="text-xs text-gray-500 mb-3"><b>🎯 วัตถุประสงค์:</b> เสริมแกร่งข้อต่อสะบ้าเข่ารับแรงกดลงเขา + สร้างไหล่และหลังซัพพอร์ตเป้น้ำ</p>
-        <div className="space-y-4">
-          <div>
-            <span className="font-bold text-purple-700 block text-xs uppercase tracking-wide mb-2">📋 ท่าขาเซฟเข่า (ทำ 3 เซต):</span>
-            <div className="space-y-2">
-              {/* 1. Eccentric Squats */}
-              <div className="exercise-card bg-purple-50/20 p-2.5 rounded-xl border border-purple-100/50 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <line x1="20" y1="85" x2="80" y2="85" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
-                      <g className="animate-squat">
-                        <circle cx="50" cy="25" r="7" fill="#36b37e"/>
-                        <line x1="50" y1="32" x2="50" y2="55" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                        <line x1="50" y1="38" x2="65" y2="38" stroke="#36b37e" strokeWidth="4" strokeLinecap="round"/>
-                        <line x1="50" y1="55" x2="50" y2="70" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round"/>
-                        <line x1="50" y1="70" x2="50" y2="85" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">1. Eccentric Squats (15 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ย่อก้นลงช้าๆ 4 วินาที ดันขึ้นปกติ เพื่อเพิ่มแรงต้านหน้าขาลงเขา</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="GT3WyYA2wNo" />
-              </div>
+      <div className="space-y-3">
+        <div className="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+          <b>🧪 ก่อนซ้อม 30–60 นาที:</b> ทาน <b>Collagen Peptides 15g + Vitamin C 50–100mg</b> (และเช้าวันพุธอย่าลืมชั่ง Fitdays ท้องว่าง!)
+        </div>
 
-              {/* 2. Box Step-Ups */}
-              <div className="exercise-card bg-purple-50/20 p-2.5 rounded-xl border border-purple-100/50 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <rect x="55" y="60" width="30" height="25" rx="3" fill="#172b4d"/>
-                      <line x1="10" y1="85" x2="90" y2="85" stroke="#475569" strokeWidth="4"/>
-                      <g className="animate-step">
-                        <circle cx="40" cy="30" r="7" fill="#36b37e"/>
-                        <line x1="40" y1="37" x2="40" y2="60" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                        <line x1="40" y1="60" x2="50" y2="72" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round"/>
-                        <line x1="50" y1="72" x2="50" y2="85" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">2. Box Step-Ups (ข้างละ 10 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ก้าวขึ้นกล่องสลับข้างกัน เพื่อเสริมกล้ามเนื้อรอบข้อต่อสะบ้าเข่าอย่างปลอดภัย</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="dQqApCGd5Ss" />
-              </div>
-
-              {/* 3. Calf Raises */}
-              <div className="exercise-card bg-purple-50/20 p-2.5 rounded-xl border border-purple-100/50 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <line x1="20" y1="85" x2="80" y2="85" stroke="#475569" strokeWidth="4"/>
-                      <g className="animate-calf">
-                        <circle cx="50" cy="25" r="7" fill="#36b37e"/>
-                        <line x1="50" y1="32" x2="50" y2="58" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                        <line x1="50" y1="58" x2="50" y2="80" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">3. Single-Leg Calf Raises (ข้างละ 15 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> เขย่งส้นเท้าขาเดียวขึ้นสุดลงสุด เพื่อป้องกันน่องล้าและเกิดตะคริวในสนามเทรล</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="3UWi44yN-wM" />
-              </div>
-            </div>
+        <div>
+          <span className="font-bold text-purple-700 block text-xs uppercase tracking-wide mb-2">
+            🦵 ช่วงที่ 1: Lower Body & 3-Phase Knee Armor (~25–30 นาที | 2–3 RIR)
+          </span>
+          <div className="space-y-2">
+            <ExerciseCard
+              title="A1. 3-Phase Knee Rehab (เลือกตามเฟส)"
+              detail="Phase 0: Wall Sit/Spanish Squat (3–4×30–45s) • Phase 1: Slow Eccentric Step-Down 10–15cm (3×10–12) • Phase 2: DB Bulgarian Split Squat (3×8–10)"
+              videoId="GT3WyYA2wNo"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <line x1="20" y1="85" x2="80" y2="85" stroke="#475569" strokeWidth="4" strokeLinecap="round" />
+                  <g className="animate-squat">
+                    <circle cx="50" cy="25" r="7" fill="#36b37e" />
+                    <line x1="50" y1="32" x2="50" y2="55" stroke="#36b37e" strokeWidth="5" strokeLinecap="round" />
+                    <line x1="50" y1="55" x2="50" y2="85" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round" />
+                  </g>
+                </svg>
+              }
+            />
+            <ExerciseCard
+              title="A2. DB Romanian Deadlift (RDL) — 3 × 10–12"
+              detail="พับสะโพกช้า 3 วินาที ดันขึ้น 1 วินาที (2 RIR) ป้องกันแฮมสตริงตึงเวลาสปรินต์เตะบอลและปั้นหลังขา"
+              videoId="ZEnWV4kSQEg"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <line x1="20" y1="85" x2="80" y2="85" stroke="#475569" strokeWidth="4" strokeLinecap="round" />
+                  <g className="animate-step">
+                    <circle cx="50" cy="28" r="7" fill="#a855f7" />
+                    <line x1="50" y1="35" x2="50" y2="62" stroke="#a855f7" strokeWidth="5" strokeLinecap="round" />
+                    <line x1="50" y1="62" x2="50" y2="85" stroke="#0052cc" strokeWidth="5" strokeLinecap="round" />
+                  </g>
+                </svg>
+              }
+            />
+            <ExerciseCard
+              title="A3. Goblet Squat / 45° Leg Press — 3 × 10–12"
+              detail="ลงช้า 3 วิ ดัน 1 วิ ไม่ล็อกเข่าสุด ล็อกมวลกล้ามเนื้อขา 10.6 kg ทั้งสองข้าง"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <g className="animate-squat">
+                    <circle cx="50" cy="25" r="7" fill="#00a3bf" />
+                    <line x1="50" y1="32" x2="50" y2="58" stroke="#00a3bf" strokeWidth="5" strokeLinecap="round" />
+                    <line x1="50" y1="58" x2="50" y2="85" stroke="#36b37e" strokeWidth="5" strokeLinecap="round" />
+                  </g>
+                </svg>
+              }
+            />
+            <ExerciseCard
+              title="A4. Single-Leg Calf Raises — 3 × 12–15/ข้าง"
+              detail="ขึ้นสุดค้าง 2 วิ ลงช้า 3 วิ เสริม Soleus ซับแรงกระแทกก่อนถึงข้อเข่า"
+              videoId="G4_m160r4oI"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <line x1="20" y1="82" x2="80" y2="82" stroke="#475569" strokeWidth="4" strokeLinecap="round" />
+                  <g className="animate-calf">
+                    <circle cx="50" cy="30" r="6" fill="#0052cc" />
+                    <line x1="50" y1="36" x2="50" y2="82" stroke="#0052cc" strokeWidth="5" strokeLinecap="round" />
+                  </g>
+                </svg>
+              }
+            />
           </div>
+        </div>
 
-          <div>
-            <span className="font-bold text-pocariBlue block text-xs uppercase tracking-wide mb-2">🏋️‍♂️ โปรแกรมเวทช่วงบนเสริมความหนา (ทำ 3 เซต):</span>
-            <div className="space-y-2">
-              {/* Floor Press */}
-              <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <line x1="10" y1="80" x2="90" y2="80" stroke="#475569" strokeWidth="4"/>
-                      <rect x="25" y="70" width="50" height="10" rx="3" fill="#36b37e"/>
-                      <circle cx="20" cy="73" r="6" fill="#36b37e"/>
-                      <g className="animate-press">
-                        <circle cx="50" cy="40" r="4" fill="#ff5630"/>
-                        <line x1="42" y1="40" x2="58" y2="40" stroke="#ff5630" strokeWidth="3"/>
-                        <line x1="50" y1="40" x2="50" y2="70" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">1. Dumbbell Floor Press (12 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นอนหงายชันเข่า ดันดัมเบลขึ้นตรง ผ่อนลงช้าๆ ศอกแตะพื้นมุม 45°-60° (เซฟไหล่และข้อมือได้ดี)</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="uUGDRwge4F8" />
-              </div>
-
-              {/* Lateral Raises */}
-              <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <circle cx="50" cy="25" r="7" fill="#36b37e"/>
-                      <line x1="50" y1="32" x2="50" y2="65" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                      <line x1="45" y1="65" x2="40" y2="85" stroke="#00a3bf" strokeWidth="4"/>
-                      <line x1="55" y1="65" x2="60" y2="85" stroke="#00a3bf" strokeWidth="4"/>
-                      <g className="animate-raise-left">
-                        <line x1="50" y1="35" x2="30" y2="35" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                        <circle cx="30" cy="35" r="3" fill="#ff5630"/>
-                      </g>
-                      <g className="animate-raise-right">
-                        <line x1="50" y1="35" x2="70" y2="35" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                        <circle cx="70" cy="35" r="3" fill="#ff5630"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">2. Dumbbell Lateral Raises (12-15 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ยืนหรือนั่งหลังตรง กางแขนขนานพื้น งอศอกเล็กน้อย ผ่อนลงช้าๆ (สร้างไหล่กลม กว้าง บาลานซ์สัดส่วน)</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="3VcKaXpzqRo" />
-              </div>
-
-              {/* Rear Delt Fly */}
-              <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <rect x="55" y="60" width="25" height="25" rx="2" fill="#172b4d"/>
-                      <circle cx="32" cy="42" r="6" fill="#36b37e"/>
-                      <line x1="38" y1="46" x2="60" y2="60" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                      <line x1="60" y1="60" x2="60" y2="85" stroke="#00a3bf" strokeWidth="4"/>
-                      <g className="animate-press">
-                        <line x1="38" y1="46" x2="38" y2="66" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                        <circle cx="38" cy="66" r="4" fill="#ff5630"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">3. Dumbbell Rear Delt Fly (12 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งก้มตัว กางแขนขึ้นด้านข้างเยื้องหลัง บีบสะบักเข้าหาคู่ (แก้ไหล่ห่อ ประคองหลังเวลาเดินชัน)</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="buuYPLVXsJg" />
-              </div>
-
-              {/* Overhead Tricep Extension */}
-              <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-                <div className="flex gap-3 items-center">
-                  <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                    <svg className="w-12 h-12" viewBox="0 0 100 100">
-                      <rect x="35" y="65" width="25" height="20" rx="2" fill="#172b4d"/>
-                      <circle cx="48" cy="40" r="7" fill="#36b37e"/>
-                      <line x1="48" y1="47" x2="48" y2="70" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                      <g className="animate-press">
-                        <rect x="40" y="15" width="16" height="6" rx="1.5" fill="#ff5630"/>
-                        <line x1="48" y1="21" x2="48" y2="40" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                      </g>
-                    </svg>
-                  </div>
-                  <div className="text-xs text-slate-800 flex-grow">
-                    <b className="text-xs block">4. Dumbbell Overhead Tricep (12 ครั้ง)</b>
-                    <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งหลังตรง ถือดัมเบลสองมือ ประคองลงด้านหลังศีรษะจนสุดแล้วดันเหยียดตรง (ลดไขมันท้องแขนย้วย)</span>
-                  </div>
-                </div>
-                <VideoPlayer videoId="fYqswDVbJDg" />
-              </div>
-            </div>
+        <div>
+          <span className="font-bold text-pocariBlue block text-xs uppercase tracking-wide mb-2">
+            💪 ช่วงที่ 2: Upper Push/Pull Thickness (~25–30 นาที | 1–2 RIR)
+          </span>
+          <div className="space-y-2">
+            <ExerciseCard
+              bgClass="bg-blue-50/20 border-blue-100/60"
+              title="A5. DB Bench Press + A6. Lat Pulldown / Row (3–4 × 8–12)"
+              detail="Superset คู่ตรงข้าม อกกลาง + ปีกหลังด้านนอก เพื่อคุมเวลาให้จบภายใน 60 นาที"
+              videoId="KjYak5vZO9s"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <line x1="25" y1="75" x2="75" y2="75" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
+                  <g className="animate-press">
+                    <line x1="32" y1="35" x2="68" y2="35" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round" />
+                    <circle cx="32" cy="35" r="5" fill="#f59e0b" />
+                    <circle cx="68" cy="35" r="5" fill="#f59e0b" />
+                  </g>
+                </svg>
+              }
+            />
+            <ExerciseCard
+              bgClass="bg-blue-50/20 border-blue-100/60"
+              title="A7. Shoulder Press + Cable Row | A8. Lateral Raise + Tricep (3 × 10–15)"
+              detail="สร้างหัวไหล่กลม หลังหนาแก้ออฟฟิศซินโดรม และเก็บความกว้างไหล่ข้าง V-Shape"
+              videoId="qEwKCR5JCog"
+              svgContent={
+                <svg className="w-12 h-12" viewBox="0 0 100 100">
+                  <circle cx="50" cy="25" r="6" fill="#00a3bf" />
+                  <line x1="50" y1="31" x2="50" y2="65" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round" />
+                  <g className="animate-raise-left"><line x1="50" y1="38" x2="25" y2="55" stroke="#36b37e" strokeWidth="3.5" strokeLinecap="round" /></g>
+                  <g className="animate-raise-right"><line x1="50" y1="38" x2="75" y2="55" stroke="#36b37e" strokeWidth="3.5" strokeLinecap="round" /></g>
+                </svg>
+              }
+            />
           </div>
         </div>
       </div>
     );
   } else if (type === 'inc') {
-    labelTxt = "Treadmill Mastery";
-    titleTxt = "ปีนเขาขุนช่างเคี่ยนจำลองบนลู่วิ่ง";
+    labelTxt = isPhase0 ? "พฤหัสบดี • Flat Cardio ONLY" : "พฤหัสบดี • Steep Incline Mastery";
+    titleTxt = isPhase0 ? "Phase 0 Flat Walk / Spin (งดเดินชัน >5%)" : "เดินชัน 8–12% ปั้นก้น-น่อง & Fat Burn";
     bodyHTML = (
-      <div>
-        <p className="text-xs text-gray-500 mb-3"><b>🎯 วัตถุประสงค์:</b> สร้างแรงขับเคลื่อนข้อเท้าและสะโพกเพื่อสู้กับความชัน D+ 1,200m</p>
-        <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-100 text-xs text-amber-900 leading-relaxed">
-          <b>📋 วิธีปฏิบัติตามหน้าจอ (60 นาที):</b><br/>
-          • <b>ช่วงที่ 1 (10 นาที):</b> วอร์มอัพ ความชัน 0% วิ่งจ๊อกเบา ๆ ความเร็วสบาย ๆ ให้ระบบเลือดไหลเวียน<br/>
-          • <b>ช่วงที่ 2 (40 นาทีเต็ม):</b> ปรับความชันขึ้นที่ <b>10% ถึง 12%</b> ลดความเร็วลู่วิ่งเหลือ <b>4.5 - 5.5 km/h</b> ฝึกเดินก้าวยาวทรงพลัง (Power Hiking) โน้มลำตัวไปข้างหน้าเล็กน้อย คุมชีพจรห้ามทะลุโซน 3<br/>
-          • <b>ช่วงที่ 3 (10 นาที):</b> คูลดาวน์ ปรับชันลดเหลือ 0% เดินคลายกรดช้า ๆ
-        </div>
+      <div className="space-y-3">
+        {isPhase0 ? (
+          <div className="text-xs text-sky-900 bg-sky-50 p-3 rounded-xl border border-sky-200 space-y-1.5">
+            <p><b>🚫 กฎเหล็ก Phase 0 (15–29 พ.ย.):</b> <b>ห้ามเดินชันเกิน 5%</b> จนกว่าหน้าเข่าจะนิ่งที่ 0/10 สนิท</p>
+            <p>• <b>วิธีปฏิบัติ:</b> เดินลู่ทางราบ (0%) หรือปั่นจักรยาน Spinning <b>40–45 นาที</b> โซน 1–2 (121–138 bpm)</p>
+          </div>
+        ) : (
+          <div className="space-y-2 text-xs">
+            <p className="text-gray-500"><b>🎯 วัตถุประสงค์:</b> กระตุ้นก้น (Glutes) น่อง และเผาไขมันด้วยแรงกระแทกต่ำ รักษาความสดของขา</p>
+            <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-1.5">
+              <p><b>1. Warm-up (10 นาที):</b> วิ่ง Chill Z2 ทางราบ 0.5%</p>
+              <p><b>2. Main Set (25–35 นาที):</b> เดินชัน <b>{wObj?.phase === 'phase1' ? '8–10%' : '8–12%'}</b> ความเร็ว <b>4.5–5.5 km/h</b> คุมหัวใจ <b>Z2–Low Z3 (130–152 bpm)</b></p>
+              <p><b>3. Cooldown (5–10 นาที):</b> ปรับชัน 0% จ๊อกหรือเดินช้าสบายๆ</p>
+            </div>
+            <div className="bg-red-50/70 p-2.5 rounded-xl border border-red-200 text-red-900">
+              <b>⚠️ ห้ามจับราวลู่วิ่ง!</b> แกว่งแขนตามธรรมชาติและดันส้นเท้า เพื่อบังคับให้ก้นและแกนกลางทำงานเต็มที่
+            </div>
+          </div>
+        )}
       </div>
     );
   } else if (type === 'long') {
-    labelTxt = "Long Run Execution";
-    titleTxt = "วิ่งยาวประคองเวลาเย็นวันเสาร์";
-    bodyHTML = wObj.isRace ? (
-      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-pocariBlue text-xs leading-relaxed">
-        <b className="block text-sm">🏁 วันลงสนามจริง PST34 เชียงใหม่!</b>
-        • ออกสตาร์ทห้ามวิ่งแข่งกับใคร คุมหัวใจ Zone 2 ปล่อยฝูงชนไปก่อน<br/>
-        • เขาพระนอนลูกแรก และขุนช่างเคี่ยนลูกกลาง ให้ใช้ฟอร์มเดินชันที่ฝึกบนลู่วิ่งไฟฟ้าอย่างมีจังหวะ<br/>
-        • กินเจลให้พลังงานและจิบน้ำทุก ๆ 45 นาทีอย่างเคร่งครัด ห้ามลืมเด็ดขาดเพื่อเซฟพลังงานยอดเขาลูกสุดท้ายก่อนเข้าเส้นชัย
-      </div>
-    ) : (
-      <div>
-        <p className="text-xs text-gray-500 mb-3"><b>🎯 วันนี้ต้องเคลื่อนที่ต่อเนื่อง: <span className="text-rose-600 font-bold">{Math.floor(wObj.minutes / 60)} ชม. {wObj.minutes % 60} นาที</span></b></p>
-        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-slate-700 leading-relaxed">
-          <b>📋 วิธีซ้อมปฏิบัติ:</b> วิ่งบนถนนยาว ๆ ช่วงเย็นด้วยความเร็วโซน 2 แนะนำให้ใส่เป้น้ำวิ่งเพื่อเลียนแบบน้ำหนักบรรทุกจริง ตั้งแต่สัปดาห์ที่ 3 เป็นต้นไป ให้พกเจลพลังงานไปซ้อมกินที่นาทีที่ 45 และนาทีที่ 90 เพื่อฝึกระบบการดูดซึมอาหารไม่ให้จุกเสียดท้องยามวิ่ง
+    labelTxt = "เสาร์ • Weekend Cardio";
+    titleTxt = "Chill Z2 Long Run (60–90m) หรือ ⚽ เตะฟุตบอล";
+    bodyHTML = (
+      <div className="space-y-3 text-xs">
+        <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 space-y-1.5">
+          <p><b>🏃‍♂️ ตัวเลือกหลัก — Chill Z2 Long Run ({wObj?.satTarget}):</b></p>
+          <p>• วิ่งชิลในสวนสาธารณะ <b>ไม่ต้องสะพายเป้น้ำ</b> เพซคุยสบายตลอดทาง</p>
+          <p>• คุมหัวใจ <b>True Zone 2 (136–150 bpm)</b> เผา ~650–950 kcal ไม่พังขาสำหรับเวทวันอาทิตย์</p>
+        </div>
+        <div className="bg-slate-800 text-white p-3 rounded-xl space-y-1.5">
+          <p className="font-bold text-treadmillGreen">⚽ Clean Football Swap Rule (เมื่อมีนัดเตะบอล):</p>
+          <p>• <b>ตัด Long Run วันเสาร์ออก 100%</b> ใช้แมตช์ฟุตบอลแทนเลย</p>
+          <p>• วอร์มเข่า-สะโพก <b>5–8 นาที</b> ก่อนลงสนาม (Leg Swings + World's Greatest Stretch + Clamshell)</p>
+          <p>• <b>วันอาทิตย์ (Strength B):</b> เล่น Upper V-Taper + Core ปกติ แต่ <b>ตัดท่า Hip Thrust/Glute Bridge ออก</b></p>
         </div>
       </div>
     );
   } else if (type === 'rec') {
-    labelTxt = "Active & Upper/Core Recovery";
-    titleTxt = "วิ่งคลายกรด + เวท Upper Body & Core";
+    labelTxt = "อาทิตย์ • Strength Day B (50–60 นาที)";
+    titleTxt = "Upper Body V-Taper + Glutes & Core";
     bodyHTML = (
-      <div>
-        <p className="text-xs text-gray-500 mb-3"><b>🎯 วัตถุประสงค์:</b> ขับกรดแลคติกหลังวิ่งยาว + สร้างความแข็งแกร่งกล้ามเนื้อส่วนบนและแกนกลางโดยเซฟเข่าและหลัง</p>
-        <p className="text-xs text-slate-700 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100 mb-4"><b>📋 1. วิ่งคลายกรด (Active Recovery):</b> วิ่งจ๊อกเบา ๆ หรือเดินเร็วในสวน 45 นาที คุมชีพจรโซน 1 หรือ 2 ตอนต้น</p>
-        
-        <span className="font-bold text-pocariBlue block text-xs uppercase tracking-wide mb-2">🏋️‍♂️ โปรแกรมเวทวันอาทิตย์ (ทำ 3 เซต):</span>
+      <div className="space-y-3">
+        <p className="text-xs text-gray-500">
+          <b>🎯 วัตถุประสงค์:</b> ปั้นกรอบ V-Taper เต็มระบบ (อกบน, ปีกหลัง, ไหล่ข้าง-หลัง, แขนหน้า-หลัง) ควบคู่ก้นและแกนกลาง (จันทร์พัก 100%)
+        </p>
         <div className="space-y-2">
-          {/* Seated Shoulder Press */}
-          <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-            <div className="flex gap-3 items-center">
-              <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                <svg className="w-12 h-12" viewBox="0 0 100 100">
-                  <rect x="35" y="65" width="30" height="20" rx="2" fill="#172b4d"/>
-                  <circle cx="50" cy="40" r="7" fill="#36b37e"/>
-                  <line x1="50" y1="47" x2="50" y2="70" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                  <g className="animate-press">
-                    <circle cx="35" cy="22" r="3" fill="#ff5630"/>
-                    <circle cx="65" cy="22" r="3" fill="#ff5630"/>
-                    <line x1="30" y1="22" x2="40" y2="22" stroke="#ff5630" strokeWidth="2"/>
-                    <line x1="60" y1="22" x2="70" y2="22" stroke="#ff5630" strokeWidth="2"/>
-                    <line x1="35" y1="22" x2="35" y2="50" stroke="#00a3bf" strokeWidth="3" strokeLinecap="round"/>
-                    <line x1="65" y1="22" x2="65" y2="50" stroke="#00a3bf" strokeWidth="3" strokeLinecap="round"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-xs text-slate-800 flex-grow">
-                <b className="text-xs block">1. Seated Shoulder Press (10-12 ครั้ง)</b>
-                <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งพิงพนัก ดันดัมเบลสองข้างขึ้นตรง ผ่อนลงช้าๆ ศอกตั้งฉาก 90° (ช่วยเซฟหลังล่างและหัวเข่า 100%)</span>
-              </div>
-            </div>
-            <VideoPlayer videoId="qEwKCR5JCog" />
-          </div>
-
-          {/* One-Arm Row */}
-          <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-            <div className="flex gap-3 items-center">
-              <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                <svg className="w-12 h-12" viewBox="0 0 100 100">
-                  <line x1="30" y1="65" x2="80" y2="65" stroke="#172b4d" strokeWidth="4"/>
-                  <line x1="40" y1="65" x2="40" y2="85" stroke="#172b4d" strokeWidth="3"/>
-                  <line x1="70" y1="65" x2="70" y2="85" stroke="#172b4d" strokeWidth="3"/>
-                  <line x1="30" y1="45" x2="70" y2="45" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                  <circle cx="24" cy="45" r="6" fill="#36b37e"/>
-                  <line x1="70" y1="45" x2="70" y2="65" stroke="#00a3bf" strokeWidth="4"/>
-                  <g className="animate-row">
-                    <line x1="50" y1="45" x2="50" y2="65" stroke="#00a3bf" strokeWidth="4"/>
-                    <circle cx="50" cy="65" r="4" fill="#ff5630"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-xs text-slate-800 flex-grow">
-                <b className="text-xs block">2. One-Arm Dumbbell Row (ข้างละ 12 ครั้ง)</b>
-                <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> ชันเข่าและมือขวาบนม้านั่ง ก้มตัวขนานพื้น ดึงดัมเบลซ้ายขึ้นหนีบศอก (เสริมหลังหนา รองรับเป้น้ำเป้วิ่งเทรล)</span>
-              </div>
-            </div>
-            <VideoPlayer videoId="PgpQ4-jHiq4" />
-          </div>
-
-          {/* Incline Pushups */}
-          <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-            <div className="flex gap-3 items-center">
-              <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                <svg className="w-12 h-12" viewBox="0 0 100 100">
-                  <line x1="50" y1="60" x2="75" y2="60" stroke="#172b4d" strokeWidth="5"/>
-                  <line x1="62" y1="60" x2="62" y2="85" stroke="#172b4d" strokeWidth="3"/>
-                  <g className="animate-press">
-                    <line x1="30" y1="85" x2="60" y2="50" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                    <circle cx="64" cy="45" r="6" fill="#36b37e"/>
-                    <line x1="55" y1="56" x2="55" y2="60" stroke="#00a3bf" strokeWidth="4"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-xs text-slate-800 flex-grow">
-                <b className="text-xs block">3. Incline Push-Ups กับเก้าอี้ (12-15 ครั้ง)</b>
-                <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> วิดพื้นวางมือบนเก้าอี้ ลำตัวเกร็งตรง (ลดภาระน้ำหนักตัว 86.8 กก. บนข้อมือและข้อศอก สร้างอกสวยงาม)</span>
-              </div>
-            </div>
-            <VideoPlayer videoId="cfns5VDVVvk" />
-          </div>
-
-          {/* Bicep Curls */}
-          <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-            <div className="flex gap-3 items-center">
-              <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                <svg className="w-12 h-12" viewBox="0 0 100 100">
-                  <rect x="35" y="65" width="25" height="20" rx="2" fill="#172b4d"/>
-                  <circle cx="48" cy="40" r="7" fill="#36b37e"/>
-                  <line x1="48" y1="47" x2="48" y2="70" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                  <g className="animate-curl">
-                    <line x1="48" y1="50" x2="48" y2="68" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                    <circle cx="48" cy="68" r="3.5" fill="#ff5630"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-xs text-slate-800 flex-grow">
-                <b className="text-xs block">4. Seated Dumbbell Bicep Curls (12 ครั้ง)</b>
-                <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งหลังตรง ถือดัมเบลหงายมือ ดึงพับข้อศอกหาบ่า ค่อยๆ ผ่อน (สร้างหน้าแขนเฟิร์ม ไม่ลีบหลังวิ่งยาว)</span>
-              </div>
-            </div>
-            <VideoPlayer videoId="yfCz6ChTOOE" />
-          </div>
-
-          {/* Knee Tucks */}
-          <div className="exercise-card bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col gap-1.5">
-            <div className="flex gap-3 items-center">
-              <div className="flex-shrink-0 w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-700 overflow-hidden">
-                <svg className="w-12 h-12" viewBox="0 0 100 100">
-                  <rect x="35" y="60" width="20" height="25" rx="2" fill="#172b4d"/>
-                  <circle cx="45" cy="35" r="6" fill="#36b37e"/>
-                  <line x1="45" y1="41" x2="45" y2="60" stroke="#36b37e" strokeWidth="5" strokeLinecap="round"/>
-                  <g className="animate-tuck">
-                    <line x1="45" y1="60" x2="65" y2="60" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                    <line x1="65" y1="60" x2="75" y2="70" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-xs text-slate-800 flex-grow">
-                <b className="text-xs block">5. Seated Knee Tucks (15 ครั้ง)</b>
-                <span className="text-gray-500 block text-[11px] mt-0.5"><b>วิธีเล่น:</b> นั่งริมเก้าอี้ มือจับขอบ เอนตัวหลังตรงเกร็งท้อง ดึงเข่าสองข้างหาอก ยืดเหยียดขาสลับเข้าออก (เซฟหลังล่างได้ 100%)</span>
-              </div>
-            </div>
-            <VideoPlayer videoId="HR_1AqBmVAU" />
-          </div>
+          <ExerciseCard
+            bgClass="bg-indigo-50/20 border-indigo-100/60"
+            title="B1. Incline DB Press 30° — 4 × 8–12 (1–2 RIR)"
+            detail="อกบนเต็มคือจุดที่ทำให้หุ่นใส่เสื้อแล้วดูหนาและเท่ชัดที่สุด! ลงช้า 2–3 วิ ดัน 1 วิ"
+            videoId="8iPEnn-ltC8"
+            svgContent={
+              <svg className="w-12 h-12" viewBox="0 0 100 100">
+                <line x1="25" y1="75" x2="75" y2="75" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
+                <g className="animate-press">
+                  <line x1="32" y1="35" x2="68" y2="35" stroke="#00a3bf" strokeWidth="4" strokeLinecap="round" />
+                  <circle cx="32" cy="35" r="5" fill="#f59e0b" />
+                  <circle cx="68" cy="35" r="5" fill="#f59e0b" />
+                </g>
+              </svg>
+            }
+          />
+          <ExerciseCard
+            bgClass="bg-indigo-50/20 border-indigo-100/60"
+            title="B2. Two-Arm Bent-Over / Chest-Supported Row — 4 × 10–12"
+            detail="ดึงบีบสะบักค้าง 1 วิ เติมความหนาช่วงกลางหลังและเปิดอกให้ผึ่งผาย"
+            videoId="roCP6wCXPqo"
+            svgContent={
+              <svg className="w-12 h-12" viewBox="0 0 100 100">
+                <g className="animate-row">
+                  <circle cx="50" cy="30" r="6" fill="#0052cc" />
+                  <line x1="35" y1="45" x2="65" y2="45" stroke="#0052cc" strokeWidth="4" strokeLinecap="round" />
+                </g>
+              </svg>
+            }
+          />
+          <ExerciseCard
+            bgClass="bg-indigo-50/20 border-indigo-100/60"
+            title="B3. Lateral Raises + Rear Delt Fly (4 × 12–15) & B4. Arms (3 × 10–12)"
+            detail="Superset ไหล่ข้าง+ไหล่หลัง ความถี่ 2x/wk คือเคล็ดลับไหล่กว้างเอวคอด + Incline Curl & Skull Crushers"
+            videoId="3VcKaXpzqRo"
+            svgContent={
+              <svg className="w-12 h-12" viewBox="0 0 100 100">
+                <circle cx="50" cy="25" r="6" fill="#00a3bf" />
+                <g className="animate-raise-left"><line x1="50" y1="38" x2="25" y2="55" stroke="#36b37e" strokeWidth="3.5" strokeLinecap="round" /></g>
+                <g className="animate-raise-right"><line x1="50" y1="38" x2="75" y2="55" stroke="#36b37e" strokeWidth="3.5" strokeLinecap="round" /></g>
+              </svg>
+            }
+          />
+          <ExerciseCard
+            bgClass="bg-emerald-50/20 border-emerald-100/60"
+            title="B5. Glute Bridge / Hip Thrust (3×12–15) + B6. Dead Bug & Side Plank"
+            detail="ล็อกสะโพก-แกนกลางต้านการบิดและคุมเอวกระชับ (ตัด B5 ออกในสัปดาห์ที่เสาร์เตะบอล)"
+            videoId="4XLEnwUr1d8"
+            svgContent={
+              <svg className="w-12 h-12" viewBox="0 0 100 100">
+                <line x1="20" y1="80" x2="80" y2="80" stroke="#475569" strokeWidth="4" strokeLinecap="round" />
+                <g className="animate-tuck"><line x1="30" y1="60" x2="70" y2="60" stroke="#36b37e" strokeWidth="5" strokeLinecap="round" /></g>
+              </svg>
+            }
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl transform transition-transform duration-300">
-        {/* Sticky modal header */}
-        <div className="bg-mountainDark p-6 text-white relative sticky top-0 z-10">
-          <button 
-            onClick={onClose} 
-            className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition cursor-pointer"
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[85vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-pocariBlue bg-blue-50 px-2.5 py-0.5 rounded-full">
+              {labelTxt}
+            </span>
+            <h3 className="text-lg font-bold text-slate-800 mt-1.5">{titleTxt}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 font-bold text-xl px-2 cursor-pointer"
           >
-            ✕
+            &times;
           </button>
-          <span className="text-[10px] bg-treadmillGreen text-white px-2.5 py-1 rounded-full uppercase font-bold tracking-wider">
-            {labelTxt}
-          </span>
-          <h3 className="text-xl font-bold mt-2">
-            {titleTxt}
-          </h3>
         </div>
-        
-        {/* Modal body */}
-        <div className="p-6 space-y-4 text-sm text-gray-600 leading-relaxed">
-          {bodyHTML}
+        <div>{bodyHTML}</div>
+        <div className="mt-6 text-right">
+          <button
+            onClick={onClose}
+            className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer"
+          >
+            ปิดหน้าต่าง
+          </button>
         </div>
       </div>
     </div>
