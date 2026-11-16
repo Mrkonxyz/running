@@ -9,6 +9,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   Dumbbell,
   Flag,
   Flame,
@@ -126,4 +127,8 @@ export function CopyIcon({ className = "w-4 h-4" }) {
 
 export function TrashIcon({ className = "w-4 h-4" }) {
   return <Trash2 className={className} strokeWidth={1.85} aria-hidden="true" />;
+}
+
+export function ChevronsUpDownIcon({ className = "w-4 h-4" }) {
+  return <ChevronsUpDown className={className} strokeWidth={1.85} aria-hidden="true" />;
 }

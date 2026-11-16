@@ -9,6 +9,7 @@ import { PlaybookView } from "./PlaybookView.jsx";
 import { YearlyView } from "./YearlyView.jsx";
 import { LoginModal } from "./LoginModal.jsx";
 import { MCPConnectModal } from "./MCPConnectModal.jsx";
+import { PlanSwitcher } from "./PlanSwitcher.jsx";
 import {
   BarChartIcon,
   BookOpenIcon,
@@ -626,94 +627,82 @@ export function TrainingHubApp({
       {/* Mobile-First Compact Sticky Top Navigation (shadcn/ui style) */}
       <nav className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md text-zinc-950 dark:text-zinc-50 sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          {/* Top Row on Mobile: Brand + Session/Theme Controls */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-7 h-7 rounded-lg bg-[#1d4ed8] flex items-center justify-center text-white shadow-2xs flex-shrink-0">
-                <BrandMark className="w-4 h-4" />
-              </span>
-              <span className="font-semibold text-sm sm:text-base tracking-tight leading-tight truncate">
-                Training Hub
-              </span>
-            </div>
+          {/* Brand + Scalable Multi-Plan Combobox Switcher */}
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 w-full md:w-auto">
+            {/* Top Row on Mobile: Brand + Session/Theme Controls */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-7 h-7 rounded-lg bg-[#1d4ed8] flex items-center justify-center text-white shadow-2xs flex-shrink-0">
+                  <BrandMark className="w-4 h-4" />
+                </span>
+                <span className="font-semibold text-sm sm:text-base tracking-tight leading-tight truncate">
+                  Training Hub
+                </span>
+              </div>
 
-            {/* Mobile-only right controls; on md+ these sit at the far right */}
-            <div className="flex items-center gap-1.5 md:hidden">
-              {user ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setMcpModalOpen(true)}
-                    aria-label="เชื่อมต่อ MCP"
-                    title="Connect MCP"
-                    className="min-h-[38px] px-2.5 rounded-lg bg-[#1d4ed8]/10 dark:bg-blue-500/15 hover:bg-[#1d4ed8]/20 text-[#1d4ed8] dark:text-blue-400 border border-[#1d4ed8]/25 dark:border-blue-500/30 text-[11px] font-medium cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <PlugIcon className="w-3.5 h-3.5" />
-                    <span>MCP</span>
-                  </button>
-                  <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded-lg text-[11px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true" />
-                    <span className="font-medium text-zinc-800 dark:text-zinc-200 max-w-[72px] truncate" title={user.email}>
-                      {user.email.split("@")[0]}
-                    </span>
+              {/* Mobile-only right controls; on md+ these sit at the far right */}
+              <div className="flex items-center gap-1.5 md:hidden">
+                {user ? (
+                  <>
                     <button
                       type="button"
-                      onClick={handleRefreshToken}
-                      disabled={refreshingToken}
-                      aria-label="ซิงค์ข้อมูลล่าสุด"
-                      title="ซิงค์ข้อมูลล่าสุด"
-                      className="min-h-[30px] px-1.5 rounded-md bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer inline-flex items-center justify-center"
+                      onClick={() => setMcpModalOpen(true)}
+                      aria-label="เชื่อมต่อ MCP"
+                      title="Connect MCP"
+                      className="min-h-[38px] px-2.5 rounded-lg bg-[#1d4ed8]/10 dark:bg-blue-500/15 hover:bg-[#1d4ed8]/20 text-[#1d4ed8] dark:text-blue-400 border border-[#1d4ed8]/25 dark:border-blue-500/30 text-[11px] font-medium cursor-pointer inline-flex items-center gap-1"
                     >
-                      <RefreshIcon className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
+                      <PlugIcon className="w-3.5 h-3.5" />
+                      <span>MCP</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      disabled={loggingOut}
-                      className="min-h-[30px] px-2 rounded-md bg-zinc-900 dark:bg-zinc-100 hover:bg-red-600 dark:hover:bg-red-600 text-white dark:text-zinc-900 hover:text-white disabled:opacity-60 text-[10px] font-medium cursor-pointer active:scale-95 transition"
-                    >
-                      {loggingOut ? "..." : "ออก"}
-                    </button>
-                  </div>
-                </>
-              ) : null}
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-1 rounded-lg text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true" />
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200 max-w-[72px] truncate" title={user.email}>
+                        {user.email.split("@")[0]}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRefreshToken}
+                        disabled={refreshingToken}
+                        aria-label="ซิงค์ข้อมูลล่าสุด"
+                        title="ซิงค์ข้อมูลล่าสุด"
+                        className="min-h-[30px] px-1.5 rounded-md bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer inline-flex items-center justify-center"
+                      >
+                        <RefreshIcon className={`w-3.5 h-3.5 ${refreshingToken ? "animate-spin" : ""}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="min-h-[30px] px-2 rounded-md bg-zinc-900 dark:bg-zinc-100 hover:bg-red-600 dark:hover:bg-red-600 text-white dark:text-zinc-900 hover:text-white disabled:opacity-60 text-[10px] font-medium cursor-pointer active:scale-95 transition"
+                      >
+                        {loggingOut ? "..." : "ออก"}
+                      </button>
+                    </div>
+                  </>
+                ) : null}
 
-              <button
-                type="button"
-                onClick={handleToggleTheme}
-                aria-label="สลับโหมดสี สว่าง หรือ มืด"
-                className="min-h-[38px] min-w-[38px] flex items-center justify-center px-2 rounded-lg bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 transition cursor-pointer"
-              >
-                <span className="dark:hidden"><MoonIcon className="w-4 h-4" /></span>
-                <span className="hidden dark:inline"><SunIcon className="w-4 h-4" /></span>
-              </button>
-            </div>
-          </div>
-
-          {/* Plan Switcher */}
-          <div className={`${plans.length > 2 ? "flex overflow-x-auto" : "grid grid-cols-2"} md:flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 p-1 rounded-lg w-full md:w-auto`}>
-            {plans.map((p) => {
-              const isSelected = p.id === selectedPlanId && viewMode !== "yearly";
-              return (
                 <button
-                  key={p.id}
                   type="button"
-                  onClick={() => handleSelectPlan(p.id)}
-                  className={`min-h-[36px] md:min-h-0 px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] sm:text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap flex-shrink-0 ${
-                    isSelected
-                      ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
-                  }`}
+                  onClick={handleToggleTheme}
+                  aria-label="สลับโหมดสี สว่าง หรือ มืด"
+                  className="min-h-[38px] min-w-[38px] flex items-center justify-center px-2 rounded-lg bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 transition cursor-pointer"
                 >
-                  {p.status === "active" ? (
-                    <FlameIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? "text-[#1d4ed8] dark:text-blue-400" : ""}`} />
-                  ) : (
-                    <TrophyIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? "text-[#1d4ed8] dark:text-blue-400" : ""}`} />
-                  )}
-                  <span className="truncate">{p.shortName}</span>
+                  <span className="dark:hidden"><MoonIcon className="w-4 h-4" /></span>
+                  <span className="hidden dark:inline"><SunIcon className="w-4 h-4" /></span>
                 </button>
-              );
-            })}
+              </div>
+            </div>
+
+            <span className="hidden md:block h-4 w-px bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
+
+            <PlanSwitcher
+              plans={plans}
+              selectedPlanId={selectedPlanId}
+              activePlan={activePlan}
+              allProgress={allProgress}
+              onSelectPlan={handleSelectPlan}
+              isYearlyView={viewMode === "yearly"}
+            />
           </div>
 
           {/* Desktop View Tabs + Connect MCP + User Session Pill + Dark Mode Toggle */}
