@@ -33,8 +33,8 @@ export async function getDb() {
 }
 
 export async function ensureDatabaseSetup(db) {
-  if (!globalThis._mongoSetupPromiseV2) {
-    globalThis._mongoSetupPromiseV2 = (async () => {
+  if (!globalThis._mongoSetupPromiseV3) {
+    globalThis._mongoSetupPromiseV3 = (async () => {
       await Promise.all([
         db.collection("users").createIndex({ email: 1 }, { unique: true }),
         db.collection("sessions").createIndex({ sessionId: 1 }, { unique: true }),
@@ -43,6 +43,14 @@ export async function ensureDatabaseSetup(db) {
         db.collection("user_plans").createIndex({ email: 1, id: 1 }, { unique: true }),
         db.collection("mcp_tokens").createIndex({ tokenHash: 1 }, { unique: true }),
         db.collection("mcp_tokens").createIndex({ email: 1, revokedAt: 1 }),
+        db.collection("activity_logs").createIndex({ email: 1, date: -1 }),
+        db.collection("activity_logs").createIndex({ email: 1, garminActivityId: 1 }),
+        db.collection("exercise_logs").createIndex({ email: 1, code: 1, date: -1 }),
+        db.collection("exercise_logs").createIndex({ email: 1, name: 1, date: -1 }),
+        db.collection("decision_gates").createIndex({ email: 1, gateId: 1 }, { unique: true }),
+        db.collection("body_comp_logs").createIndex({ email: 1, date: 1 }, { unique: true }),
+        db.collection("daily_biometrics").createIndex({ email: 1, date: 1 }, { unique: true }),
+        db.collection("nutrition_logs").createIndex({ email: 1, date: 1 }, { unique: true }),
         db.collection("plans").createIndex({ id: 1 }, { unique: true }),
       ]);
 
@@ -70,9 +78,9 @@ export async function ensureDatabaseSetup(db) {
         );
       }
     })().catch((err) => {
-      globalThis._mongoSetupPromiseV2 = null;
+      globalThis._mongoSetupPromiseV3 = null;
       throw err;
     });
   }
-  return globalThis._mongoSetupPromiseV2;
+  return globalThis._mongoSetupPromiseV3;
 }

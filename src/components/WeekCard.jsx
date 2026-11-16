@@ -1,6 +1,14 @@
 "use client";
 
 import { CheckIcon, ChevronRightIcon, LockIcon } from "./Icons.jsx";
+import {
+  DAYS_ORDER,
+  DAY_KEY_TO_LEGACY,
+  JS_DAY_TO_KEY,
+  buildWeekDaysMap,
+  getSessionCompletion,
+  resolveDayKey,
+} from "../lib/schedule-utils.js";
 
 function getWeekRangeLabel(wNum, startDateStr) {
   const startDate = new Date(startDateStr);
@@ -11,10 +19,60 @@ function getWeekRangeLabel(wNum, startDateStr) {
   return `${start.toLocaleDateString("th-TH", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("th-TH", { month: "short", day: "numeric" })}`;
 }
 
+function getSessionPresentation(type, week, isHybrid) {
+  switch (type) {
+    case "chill_z2_run":
+    case "easy":
+      return {
+        guideType: "easy",
+        title: isHybrid ? "Chill Z2 Run" : "Easy Road",
+        accent: "border-t-pocariBlue text-pocariBlue dark:text-sky-400",
+      };
+    case "strength_a":
+    case "str":
+      return {
+        guideType: "str",
+        title: isHybrid ? "Strength A" : "Strength",
+        accent: "border-t-purple-500 text-purple-700 dark:text-purple-400",
+      };
+    case "incline_walk":
+    case "inc":
+      return {
+        guideType: "inc",
+        title: isHybrid ? (week.isRecovery ? "Flat Cardio" : "Steep Incline") : "Treadmill",
+        accent: "border-t-treadmillGreen text-emerald-700 dark:text-emerald-400",
+      };
+    case "long_run":
+    case "long":
+      return {
+        guideType: "long",
+        title: isHybrid ? "Long Run / Football" : "Long Run",
+        accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
+      };
+    case "football":
+      return {
+        guideType: "long",
+        title: "Football Match",
+        accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
+      };
+    case "strength_b":
+    case "recovery":
+    case "rec":
+    default:
+      return {
+        guideType: "rec",
+        title: isHybrid ? "Strength B" : "Recovery",
+        accent: "border-t-indigo-500 text-indigo-700 dark:text-indigo-400",
+      };
+  }
+}
+
 export function WeekCard({
   week,
+  plan = null,
   planId,
   progressState,
+  executionLogs = {},
   onToggleDay,
   onToggleWeekAll,
   onOpenGuide,
@@ -41,54 +99,35 @@ export function WeekCard({
     badgeStyle = "bg-[#1d4ed8] text-white";
   }
 
-  const isHybrid = planId ==="hybrid-2026";
+  const isHybrid = planId === "hybrid-2026";
+  const todayKeyResolved = resolveDayKey(todayDayType);
+  const weekDaysMap = buildWeekDaysMap(week, plan || { id: planId });
 
-  const days = [
-    {
-      type: "easy",
-      label: "อังคาร",
-      title: isHybrid ? "Chill Z2 Run" : "Easy Road",
-      target: week.tueTarget,
-      detail: week.tueDetail,
-      accent: "border-t-pocariBlue text-pocariBlue dark:text-sky-400",
-    },
-    {
-      type: "str",
-      label: "พุธ",
-      title: isHybrid ? "Strength A" : "Strength",
-      target: week.wedTarget,
-      detail: week.wedDetail,
-      accent: "border-t-purple-500 text-purple-700 dark:text-purple-400",
-    },
-    {
-      type: "inc",
-      label: "พฤหัสบดี",
-      title: isHybrid ? (week.isRecovery ? "Flat Cardio" : "Steep Incline") : "Treadmill",
-      target: week.thuTarget,
-      detail: week.thuDetail,
-      accent: "border-t-treadmillGreen text-emerald-700 dark:text-emerald-400",
-    },
-    {
-      type: "long",
-      label: "เสาร์",
-      title: isHybrid ? "Long Run / Football" : "Long Run",
-      target: week.satTarget,
-      detail: week.satDetail,
-      accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
-    },
-    {
-      type: "rec",
-      label: "อาทิตย์",
-      title: isHybrid ? "Strength B" : "Recovery",
-      target: week.sunTarget,
-      detail: week.sunDetail,
-      accent: "border-t-indigo-500 text-indigo-700 dark:text-indigo-400",
-    },
-  ];
+  const allEntries = DAYS_ORDER.map((dayKey) => {
+    const dayObj = weekDaysMap[dayKey];
+    const presentation = getSessionPresentation(dayObj.type, week, isHybrid);
+    const comp = getSessionCompletion(progressState, executionLogs, week.week, dayKey);
+    return {
+      ...dayObj,
+      ...presentation,
+      labelShort: dayObj.label.replace("วัน", ""),
+      progressKey: comp.progressKey,
+      legacyKey: comp.legacyKey,
+      isChecked: comp.completed,
+      executionLog: comp.log,
+      legacyType: DAY_KEY_TO_LEGACY[dayKey] || null,
+    };
+  });
 
-  const completedInWeek = days.filter((d) => progressState[`W${week.week}-${d.type}`]).length;
-  const allWeekDone = completedInWeek === days.length;
-  const weekPercent = Math.round((completedInWeek / days.length) * 100);
+  const activeDays = allEntries.filter((d) => !d.isRest);
+  const restDays = allEntries.filter((d) => d.isRest);
+
+  const completedInWeek = activeDays.filter((d) => d.isChecked).length;
+  const totalInWeek = activeDays.length || 1;
+  const allWeekDone = activeDays.length > 0 && completedInWeek === activeDays.length;
+  const weekPercent = Math.round((completedInWeek / totalInWeek) * 100);
+  const gridColsClass = activeDays.length === 5 ? "lg:grid-cols-5" : activeDays.length <= 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
+  const currentJsDayKey = JS_DAY_TO_KEY[new Date().getDay()];
 
   return (
     <div className={`${cardSurface} rounded-2xl p-4 sm:p-6 border shadow-sm transition hover:shadow-md`}>
@@ -111,7 +150,7 @@ export function WeekCard({
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700">
             <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              {completedInWeek}/5
+              {completedInWeek}/{activeDays.length}
             </span>
             <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
@@ -163,104 +202,121 @@ export function WeekCard({
         )}
       </div>
 
-      {/* 5 Active Training Days */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mb-3">
-        {days.map((day) => {
-          const key = `W${week.week}-${day.type}`;
-          const isChecked = !!progressState[key];
-          const isTodayCard = isCurrentWeek && todayDayType === day.type;
+      {/* Active Training Days */}
+      {activeDays.length > 0 && (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridColsClass} gap-2.5 mb-3`}>
+          {activeDays.map((day) => {
+            const isTodayCard = isCurrentWeek && todayKeyResolved === day.dayKey;
 
-          return (
-            <div
-              key={day.type}
-              className={`rounded-xl border border-t-4 p-3 flex flex-col justify-between transition ${day.accent} ${
-                isTodayCard
-                  ? "ring-2 ring-pocariBlue dark:ring-sky-400 shadow-sm"
-                  : ""
-              } ${
-                isChecked
-                  ? "bg-emerald-50/75 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/70"
-                  : "bg-slate-50/80 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80"
-              }`}
-            >
-              <div>
-                <div className="flex justify-between items-center gap-1.5 mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      {day.label}
-                    </span>
-                    {isTodayCard && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-pocariBlue text-white">
-                        วันนี้
+            return (
+              <div
+                key={day.dayKey}
+                className={`rounded-xl border border-t-4 p-3 flex flex-col justify-between transition ${day.accent} ${
+                  isTodayCard ? "ring-2 ring-pocariBlue dark:ring-sky-400 shadow-sm" : ""
+                } ${
+                  day.isChecked
+                    ? "bg-emerald-50/75 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/70"
+                    : "bg-slate-50/80 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-700/80"
+                }`}
+              >
+                <div>
+                  <div className="flex justify-between items-center gap-1.5 mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {day.labelShort}
                       </span>
-                    )}
+                      {isTodayCard && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-pocariBlue text-white">
+                          วันนี้
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onToggleDay(day.progressKey)}
+                      aria-pressed={day.isChecked}
+                      aria-label={`${day.labelShort} ${day.title}: ${day.isChecked ? "เสร็จแล้ว" : "ยังไม่เสร็จ"}`}
+                      className={`min-h-[36px] sm:min-h-[28px] px-3 sm:px-2 py-1 sm:py-0.5 rounded-lg text-[11px] sm:text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                        day.isChecked
+                          ? "bg-treadmillGreen text-white border-treadmillGreen"
+                          : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-treadmillGreen"
+                      }`}
+                    >
+                      {!isAuthenticated ? (
+                        <LockIcon className="w-3 h-3" />
+                      ) : day.isChecked ? (
+                        <CheckIcon className="w-3 h-3" />
+                      ) : (
+                        <span className="w-2.5 h-2.5 rounded-full border border-current inline-block" aria-hidden="true" />
+                      )}
+                      <span>{!isAuthenticated ? "ติ๊ก" : day.isChecked ? "เสร็จ" : "ติ๊ก"}</span>
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onToggleDay(key)}
-                    aria-pressed={isChecked}
-                    aria-label={`${day.label} ${day.title}: ${isChecked ? "เสร็จแล้ว" : "ยังไม่เสร็จ"}`}
-                    className={`min-h-[36px] sm:min-h-[28px] px-3 sm:px-2 py-1 sm:py-0.5 rounded-lg text-[11px] sm:text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
-                      isChecked
-                        ? "bg-treadmillGreen text-white border-treadmillGreen"
-                        : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-treadmillGreen"
-                    }`}
-                  >
-                    {!isAuthenticated ? (
-                      <LockIcon className="w-3 h-3" />
-                    ) : isChecked ? (
-                      <CheckIcon className="w-3 h-3" />
-                    ) : (
-                      <span className="w-2.5 h-2.5 rounded-full border border-current inline-block" aria-hidden="true" />
-                    )}
-                    <span>{!isAuthenticated ? "ติ๊ก" : isChecked ? "เสร็จ" : "ติ๊ก"}</span>
-                  </button>
+                  <p className="text-xs font-bold text-slate-800 dark:text-white">{day.title}</p>
+                  <p className={`text-[11px] font-semibold mt-0.5 ${day.accent.split(" ").slice(1).join(" ")}`}>
+                    {day.target}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug line-clamp-2">
+                    {day.detail}
+                  </p>
+                  {day.executionLog && (day.executionLog.actualDurationMin || day.executionLog.distanceKm || day.executionLog.rpe) && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {day.executionLog.distanceKm !== undefined && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-medium">
+                          {day.executionLog.distanceKm} km
+                        </span>
+                      )}
+                      {day.executionLog.actualDurationMin !== undefined && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-medium">
+                          {day.executionLog.actualDurationMin}m
+                        </span>
+                      )}
+                      {day.executionLog.rpe !== undefined && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100/80 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 font-medium">
+                          RPE {day.executionLog.rpe}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <p className="text-xs font-bold text-slate-800 dark:text-white">{day.title}</p>
-                <p className={`text-[11px] font-semibold mt-0.5 ${day.accent.split("").slice(1).join("")}`}>
-                  {day.target}
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug line-clamp-2">
-                  {day.detail}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => onOpenGuide(day.guideType, week.week)}
+                  className="mt-2.5 w-full min-h-[38px] sm:min-h-0 flex items-center justify-between text-left text-xs sm:text-[11px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline pt-2 border-t border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                >
+                  <span>ดูท่าซ้อม &amp; GIF</span>
+                  <ChevronRightIcon className="w-3.5 h-3.5" />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => onOpenGuide(day.type, week.week)}
-                className="mt-2.5 w-full min-h-[38px] sm:min-h-0 flex items-center justify-between text-left text-xs sm:text-[11px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline pt-2 border-t border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
-              >
-                <span>ดูท่าซ้อม &amp; GIF</span>
-                <ChevronRightIcon className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Rest Days Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-200/60 dark:border-slate-800">
-        <div
-          className={`px-3 py-1.5 rounded-lg border ${
-            isCurrentWeek && new Date().getDay() === 1
-              ? "bg-blue-50 dark:bg-sky-950/50 border-pocariBlue/40 dark:border-sky-500/50"
-              : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800"
-          }`}
-        >
-          <span className="font-bold text-slate-700 dark:text-slate-200">จันทร์:</span> {week.monRest}
+      {restDays.length > 0 && (
+        <div className={`grid grid-cols-1 ${restDays.length > 1 ? "sm:grid-cols-2" : ""} gap-2 text-[11px] text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-200/60 dark:border-slate-800`}>
+          {restDays.map((rd) => {
+            const isTodayRest = isCurrentWeek && currentJsDayKey === rd.dayKey;
+            return (
+              <div
+                key={rd.dayKey}
+                className={`px-3 py-1.5 rounded-lg border ${
+                  isTodayRest
+                    ? "bg-blue-50 dark:bg-sky-950/50 border-pocariBlue/40 dark:border-sky-500/50"
+                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800"
+                }`}
+              >
+                <span className="font-bold text-slate-700 dark:text-slate-200">{rd.labelShort}:</span>{" "}
+                {rd.detail || rd.target}
+              </div>
+            );
+          })}
         </div>
-        <div
-          className={`px-3 py-1.5 rounded-lg border ${
-            isCurrentWeek && new Date().getDay() === 5
-              ? "bg-blue-50 dark:bg-sky-950/50 border-pocariBlue/40 dark:border-sky-500/50"
-              : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800"
-          }`}
-        >
-          <span className="font-bold text-slate-700 dark:text-slate-200">ศุกร์:</span> {week.friRest}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

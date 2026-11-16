@@ -1,5 +1,12 @@
 import { PLANS, getPlanById } from "../data/plans/index.js";
 import { getDb } from "./mongodb.js";
+import {
+  DAYS_ORDER,
+  DAY_KEY_TO_LEGACY,
+  DAY_META,
+  buildStructuredDay,
+  resolveDayKey,
+} from "./schedule-utils.js";
 
 const DEFAULT_THEME = {
   heroGradient: "from-zinc-950 via-zinc-900 to-[#1d4ed8]",
@@ -17,71 +24,217 @@ function sanitizeSlug(input, fallback = "custom-plan") {
   return cleaned || fallback;
 }
 
-export function normalizeWeek(rawWeek, fallbackNum = 1) {
-  const weekNum = Number.isInteger(Number(rawWeek?.week)) && Number(rawWeek.week) > 0
-    ? Number(rawWeek.week)
-    : fallbackNum;
+function normalizeExercises(rawExercises) {
+  if (!Array.isArray(rawExercises)) return undefined;
+  return rawExercises
+    .filter((ex) => ex && typeof ex === "object")
+    .map((ex, idx) => ({
+      code: String(ex.code || `E${idx + 1}`),
+      name: String(ex.name || ex.muscle || `Exercise ${idx + 1}`),
+      sets: ex.sets !== undefined ? Number(ex.sets) : 3,
+      repRange: String(ex.repRange || ex.reps || "8–12"),
+      targetRir: String(ex.targetRir || ex.rir || "1–2 RIR"),
+      tempo: ex.tempo ? String(ex.tempo) : null,
+      restSec: ex.restSec !== undefined ? Number(ex.restSec) : 90,
+      homeOption: String(ex.homeOption || ex.home || ""),
+      gymOption: String(ex.gymOption || ex.gym || ""),
+      rehabStage: ex.rehabStage ? String(ex.rehabStage) : null,
+      tips: ex.tips ? String(ex.tips) : "",
+    }));
+}
 
-  return {
+function syncFlatFieldsFromDays(targetWeek, daysMap) {
+  const mapPairs = [
+    ["tue", "tueTarget", "tueDetail"],
+    ["wed", "wedTarget", "wedDetail"],
+    ["thu", "thuTarget", "thuDetail"],
+    ["sat", "satTarget", "satDetail"],
+    ["sun", "sunTarget", "sunDetail"],
+  ];
+
+  if (daysMap.mon) {
+    targetWeek.monRest = daysMap.mon.detail || daysMap.mon.target || targetWeek.monRest;
+  }
+  if (daysMap.fri) {
+    targetWeek.friRest = daysMap.fri.detail || daysMap.fri.target || targetWeek.friRest;
+  }
+  for (const [k, tField, dField] of mapPairs) {
+    if (daysMap[k]) {
+      targetWeek[tField] = daysMap[k].target;
+      targetWeek[dField] = daysMap[k].detail;
+    }
+  }
+}
+
+/**
+ * Normalizes and merges a week object cleanly with strict partial-update semantics.
+ * Preserves UTF-8 emojis/symbols and keeps legacy flat fields in sync with 7-day `days`.
+ */
+export function normalizeWeek(rawPatch = {}, fallbackNum = 1, baseWeek = null, plan = null) {
+  const weekNum =
+    rawPatch?.week !== undefined && Number.isInteger(Number(rawPatch.week)) && Number(rawPatch.week) > 0
+      ? Number(rawPatch.week)
+      : baseWeek?.week || fallbackNum;
+
+  const base = baseWeek || {};
+
+  const merged = {
     week: weekNum,
-    phase: String(rawWeek?.phase || "base"),
-    phaseLabel: String(rawWeek?.phaseLabel || `สัปดาห์ที่ ${weekNum}`),
-    title: String(rawWeek?.title || `Week ${weekNum} Training`),
-    tueTarget: String(rawWeek?.tueTarget || "Easy Cardio 35-45m"),
-    tueDetail: String(rawWeek?.tueDetail || "วิ่งหรือคาร์ดิโอโซน 2 สบายๆ 35-45 นาที"),
-    wedTarget: String(rawWeek?.wedTarget || "Strength Day A 45m"),
-    wedDetail: String(rawWeek?.wedDetail || "เวทเทรนนิ่งช่วงบนและแกนกลาง 45 นาที"),
-    thuTarget: String(rawWeek?.thuTarget || "Incline Walk / Cardio 40m"),
-    thuDetail: String(rawWeek?.thuDetail || "เดินชันหรือปั่นจักรยานโซน 2 40 นาที"),
-    satTarget: String(rawWeek?.satTarget || "Long Session 60m"),
-    satDetail: String(rawWeek?.satDetail || "ฝึกความอึดระยะยาวโซน 2 60 นาที"),
-    sunTarget: String(rawWeek?.sunTarget || "Strength Day B / Recovery"),
-    sunDetail: String(rawWeek?.sunDetail || "เวทช่วงบน / ยืดเหยียดฟื้นฟูร่างกาย"),
-    monRest: String(rawWeek?.monRest || "พักเต็มวัน + โปรตีนถึงเป้า"),
-    friRest: String(rawWeek?.friRest || "พักฟื้นร่างกาย + ยืดเหยียดเบาๆ"),
-    minutes: Number.isFinite(Number(rawWeek?.minutes)) ? Number(rawWeek.minutes) : 45,
-    weeklyCardioMin: Number.isFinite(Number(rawWeek?.weeklyCardioMin)) ? Number(rawWeek.weeklyCardioMin) : 120,
-    focus: String(rawWeek?.focus || "รักษาความสม่ำเสมอและคุมโซนหัวใจ"),
-    nutritionNote: String(rawWeek?.nutritionNote || "โปรตีน 1.8-2.0 g/kg + ดื่มน้ำ 2.5 ลิตร"),
-    isRecovery: Boolean(rawWeek?.isRecovery),
-    isEasy: Boolean(rawWeek?.isEasy),
-    isPeak: Boolean(rawWeek?.isPeak),
-    isRace: Boolean(rawWeek?.isRace),
-    isGoal: Boolean(rawWeek?.isGoal),
+    phase: rawPatch.phase !== undefined ? String(rawPatch.phase) : String(base.phase || "base"),
+    phaseLabel:
+      rawPatch.phaseLabel !== undefined
+        ? String(rawPatch.phaseLabel)
+        : String(base.phaseLabel || `สัปดาห์ที่ ${weekNum}`),
+    title:
+      rawPatch.title !== undefined
+        ? String(rawPatch.title)
+        : String(base.title || `Week ${weekNum} Training`),
+    tueTarget: rawPatch.tueTarget !== undefined ? String(rawPatch.tueTarget) : String(base.tueTarget || "Easy Cardio 35-45m"),
+    tueDetail: rawPatch.tueDetail !== undefined ? String(rawPatch.tueDetail) : String(base.tueDetail || "วิ่งหรือคาร์ดิโอโซน 2 สบายๆ"),
+    wedTarget: rawPatch.wedTarget !== undefined ? String(rawPatch.wedTarget) : String(base.wedTarget || "Strength Day A 45m"),
+    wedDetail: rawPatch.wedDetail !== undefined ? String(rawPatch.wedDetail) : String(base.wedDetail || "เวทเทรนนิ่งช่วงบนและแกนกลาง"),
+    thuTarget: rawPatch.thuTarget !== undefined ? String(rawPatch.thuTarget) : String(base.thuTarget || "Incline Walk / Cardio 40m"),
+    thuDetail: rawPatch.thuDetail !== undefined ? String(rawPatch.thuDetail) : String(base.thuDetail || "เดินชันหรือปั่นจักรยานโซน 2"),
+    satTarget: rawPatch.satTarget !== undefined ? String(rawPatch.satTarget) : String(base.satTarget || "Long Session 60m"),
+    satDetail: rawPatch.satDetail !== undefined ? String(rawPatch.satDetail) : String(base.satDetail || "ฝึกความอึดระยะยาวโซน 2"),
+    sunTarget: rawPatch.sunTarget !== undefined ? String(rawPatch.sunTarget) : String(base.sunTarget || "Strength Day B / Recovery"),
+    sunDetail: rawPatch.sunDetail !== undefined ? String(rawPatch.sunDetail) : String(base.sunDetail || "เวทช่วงบน / ยืดเหยียดฟื้นฟูร่างกาย"),
+    monRest: rawPatch.monRest !== undefined ? String(rawPatch.monRest) : String(base.monRest || "พักเต็มวัน + โปรตีนถึงเป้า"),
+    friRest: rawPatch.friRest !== undefined ? String(rawPatch.friRest) : String(base.friRest || "พักฟื้นร่างกาย + ยืดเหยียดเบาๆ"),
+    minutes:
+      rawPatch.minutes !== undefined
+        ? Number(rawPatch.minutes)
+        : Number.isFinite(Number(base.minutes))
+        ? Number(base.minutes)
+        : 45,
+    weeklyCardioMin:
+      rawPatch.weeklyCardioMin !== undefined
+        ? Number(rawPatch.weeklyCardioMin)
+        : Number.isFinite(Number(base.weeklyCardioMin))
+        ? Number(base.weeklyCardioMin)
+        : 120,
+    focus:
+      rawPatch.focus !== undefined
+        ? String(rawPatch.focus)
+        : String(base.focus || "รักษาความสม่ำเสมอและคุมโซนหัวใจ"),
+    nutritionNote:
+      rawPatch.nutritionNote !== undefined
+        ? String(rawPatch.nutritionNote)
+        : String(base.nutritionNote || "โปรตีน 1.8-2.0 g/kg + ดื่มน้ำ 2.5 ลิตร"),
+    isRecovery: rawPatch.isRecovery !== undefined ? Boolean(rawPatch.isRecovery) : Boolean(base.isRecovery),
+    isEasy: rawPatch.isEasy !== undefined ? Boolean(rawPatch.isEasy) : Boolean(base.isEasy),
+    isPeak: rawPatch.isPeak !== undefined ? Boolean(rawPatch.isPeak) : Boolean(base.isPeak),
+    isRace: rawPatch.isRace !== undefined ? Boolean(rawPatch.isRace) : Boolean(base.isRace),
+    isGoal: rawPatch.isGoal !== undefined ? Boolean(rawPatch.isGoal) : Boolean(base.isGoal),
   };
+
+  if (rawPatch.nutritionTargets !== undefined || base.nutritionTargets) {
+    merged.nutritionTargets = {
+      ...(base.nutritionTargets || {}),
+      ...(rawPatch.nutritionTargets || {}),
+    };
+  }
+
+  // Merge 7-day `days` map cleanly without clobbering unmentioned days
+  const nextDays = {};
+  for (const key of DAYS_ORDER) {
+    const existingStructured = buildStructuredDay(base, key, plan);
+    const patchDay = rawPatch.days && typeof rawPatch.days === "object" ? rawPatch.days[key] : null;
+
+    // Reflect explicit flat patch updates if `days[key]` was not directly provided
+    let targetVal = existingStructured.target;
+    let detailVal = existingStructured.detail;
+    let typeVal = existingStructured.type;
+    let durationVal = existingStructured.durationMin;
+    let exercisesVal = existingStructured.exercises;
+
+    if (key === "mon" && rawPatch.monRest !== undefined) detailVal = merged.monRest;
+    if (key === "fri" && rawPatch.friRest !== undefined) detailVal = merged.friRest;
+    if (key === "tue") {
+      if (rawPatch.tueTarget !== undefined) targetVal = merged.tueTarget;
+      if (rawPatch.tueDetail !== undefined) detailVal = merged.tueDetail;
+    }
+    if (key === "wed") {
+      if (rawPatch.wedTarget !== undefined) targetVal = merged.wedTarget;
+      if (rawPatch.wedDetail !== undefined) detailVal = merged.wedDetail;
+    }
+    if (key === "thu") {
+      if (rawPatch.thuTarget !== undefined) targetVal = merged.thuTarget;
+      if (rawPatch.thuDetail !== undefined) detailVal = merged.thuDetail;
+    }
+    if (key === "sat") {
+      if (rawPatch.satTarget !== undefined) targetVal = merged.satTarget;
+      if (rawPatch.satDetail !== undefined) detailVal = merged.satDetail;
+    }
+    if (key === "sun") {
+      if (rawPatch.sunTarget !== undefined) targetVal = merged.sunTarget;
+      if (rawPatch.sunDetail !== undefined) detailVal = merged.sunDetail;
+    }
+
+    if (patchDay && typeof patchDay === "object") {
+      if (patchDay.type !== undefined || patchDay.sessionType !== undefined) {
+        typeVal = String(patchDay.type || patchDay.sessionType);
+      }
+      if (patchDay.target !== undefined) targetVal = String(patchDay.target);
+      if (patchDay.detail !== undefined) detailVal = String(patchDay.detail);
+      if (patchDay.durationMin !== undefined) durationVal = Number(patchDay.durationMin);
+      if (patchDay.exercises !== undefined) exercisesVal = normalizeExercises(patchDay.exercises) || [];
+    }
+
+    nextDays[key] = {
+      dayKey: key,
+      label: patchDay?.label ? String(patchDay.label) : DAY_META[key].label,
+      shortLabel: DAY_META[key].short,
+      type: typeVal,
+      isRest: typeVal === "rest",
+      target: targetVal,
+      detail: detailVal,
+      durationMin: durationVal,
+      exercises: Array.isArray(exercisesVal) ? exercisesVal : [],
+    };
+  }
+
+  merged.days = nextDays;
+  syncFlatFieldsFromDays(merged, nextDays);
+  return merged;
 }
 
 function serializePlanDoc(doc) {
   if (!doc) return null;
-  const { _id, email, createdAt, updatedAt, ...rest } = doc;
+  const { _id, email, createdAt, updatedAt, deleted, ...rest } = doc;
   void _id;
   void email;
   void createdAt;
   void updatedAt;
+  void deleted;
   return rest;
 }
 
 /**
  * Merges built-in default plans with user-created or AI-updated plans in `running.user_plans`.
- * User overrides take precedence by `id`; newly created plans appear cleanly alongside built-ins.
  */
-export async function getMergedPlansForUser(email, existingDb = null) {
+export async function getMergedPlansForUser(email, existingDb = null, { includeArchived = false } = {}) {
   if (!email) return PLANS;
 
   const db = existingDb || (await getDb());
   const docs = await db
     .collection("user_plans")
     .find({ email: email.toLowerCase() })
-    .sort({ createdAt: 1 })
+    .sort({ sortOrder: 1, createdAt: 1 })
     .toArray();
 
   if (!docs.length) return PLANS;
 
   const customById = new Map();
   const extraPlans = [];
+  const deletedIds = new Set();
   const builtInIds = new Set(PLANS.map((p) => p.id));
 
   for (const doc of docs) {
+    if (doc.deleted) {
+      deletedIds.add(doc.id);
+      continue;
+    }
     const clean = serializePlanDoc(doc);
     if (!clean?.id) continue;
     if (builtInIds.has(clean.id)) {
@@ -91,9 +244,16 @@ export async function getMergedPlansForUser(email, existingDb = null) {
     }
   }
 
-  const mergedBuiltIns = PLANS.map((p) => customById.get(p.id) || p);
-  // Put newly created active AI plans right after active built-ins or at the front if marked primary
-  return [...mergedBuiltIns, ...extraPlans];
+  const mergedBuiltIns = PLANS.filter((p) => !deletedIds.has(p.id)).map((p) => customById.get(p.id) || p);
+  const all = [...mergedBuiltIns, ...extraPlans];
+  return includeArchived ? all : all.filter((p) => p.status !== "archived");
+}
+
+function normalizeStatusLabel(status, customLabel) {
+  if (customLabel) return String(customLabel);
+  if (status === "completed") return "เสร็จสิ้นแล้ว";
+  if (status === "archived") return "เก็บเข้าคลังแล้ว";
+  return "แผนปัจจุบัน";
 }
 
 /**
@@ -104,18 +264,23 @@ export async function upsertUserPlan(email, input, existingDb = null) {
   const db = existingDb || (await getDb());
 
   const id = sanitizeSlug(input?.id || input?.shortName || input?.title, `plan-${Date.now()}`);
-  const shortName = String(input?.shortName || input?.title || id).trim().slice(0, 32);
-  const title = String(input?.title || shortName).trim();
+  const mergedExisting = await getMergedPlansForUser(normalizedEmail, db, { includeArchived: true });
+  const prevPlan = mergedExisting.find((p) => p.id === id) || null;
+
+  const shortName = String(input?.shortName || prevPlan?.shortName || input?.title || id).trim().slice(0, 32);
+  const title = String(input?.title || prevPlan?.title || shortName).trim();
   const subtitle = String(
-    input?.subtitle || "แผนซ้อมที่สร้างและปรับแต่งให้เหมาะกับเป้าหมายของคุณ"
+    input?.subtitle || prevPlan?.subtitle || "แผนซ้อมที่สร้างและปรับแต่งให้เหมาะกับเป้าหมายของคุณ"
   ).trim();
   const startDateStr = /^\d{4}-\d{2}-\d{2}$/.test(String(input?.startDateStr || ""))
     ? String(input.startDateStr)
-    : new Date().toISOString().slice(0, 10);
+    : prevPlan?.startDateStr || new Date().toISOString().slice(0, 10);
 
-  const rawWeeks = Array.isArray(input?.weeks) && input.weeks.length > 0 ? input.weeks : [{}];
+  const rawWeeks = Array.isArray(input?.weeks) && input.weeks.length > 0
+    ? input.weeks
+    : prevPlan?.weeks || [{}];
   const weeks = rawWeeks
-    .map((w, idx) => normalizeWeek(w, idx + 1))
+    .map((w, idx) => normalizeWeek(w, idx + 1, null, prevPlan))
     .sort((a, b) => a.week - b.week);
 
   const phases =
@@ -125,11 +290,8 @@ export async function upsertUserPlan(email, input, existingDb = null) {
           label: String(ph?.label || `Phase ${idx + 1}`),
           range: String(ph?.range || ""),
         }))
-      : Array.from(
-          new Map(
-            weeks.map((w) => [w.phase, { id: w.phase, label: w.phaseLabel, range: "" }])
-          ).values()
-        );
+      : prevPlan?.phases ||
+        Array.from(new Map(weeks.map((w) => [w.phase, { id: w.phase, label: w.phaseLabel, range: "" }])).values());
 
   const metrics =
     Array.isArray(input?.metrics) && input.metrics.length > 0
@@ -139,12 +301,13 @@ export async function upsertUserPlan(email, input, existingDb = null) {
           sub: String(m?.sub || ""),
           color: String(m?.color || "text-pocariBlue"),
         }))
-      : [
+      : prevPlan?.metrics || [
           { label: "จำนวนสัปดาห์", value: `${weeks.length} สัปดาห์`, sub: "อัปเดตโดยผู้ช่วย AI", color: "text-pocariBlue" },
           { label: "วันเริ่มต้น", value: startDateStr, sub: String(input?.periodLabel || `${weeks.length} Weeks`), color: "text-treadmillGreen" },
         ];
 
-  const status = input?.status === "completed" ? "completed" : "active";
+  const validStatuses = ["active", "completed", "archived"];
+  const status = validStatuses.includes(input?.status) ? input.status : prevPlan?.status || "active";
   const now = new Date();
   const planDoc = {
     email: normalizedEmail,
@@ -152,17 +315,22 @@ export async function upsertUserPlan(email, input, existingDb = null) {
     shortName,
     title,
     subtitle,
-    badge: String(input?.badge || "AI Custom Plan"),
+    badge: String(input?.badge || prevPlan?.badge || "AI Custom Plan"),
     status,
-    statusLabel: String(input?.statusLabel || (status === "completed" ? "เสร็จสิ้นแล้ว" : "แผนปัจจุบัน")),
-    periodLabel: String(input?.periodLabel || `เริ่ม ${startDateStr} (${weeks.length} สัปดาห์)`),
+    statusLabel: normalizeStatusLabel(status, input?.statusLabel),
+    periodLabel: String(input?.periodLabel || prevPlan?.periodLabel || `เริ่ม ${startDateStr} (${weeks.length} สัปดาห์)`),
     startDateStr,
     storageKey: `${id.replace(/-/g, "_")}_state`,
-    theme: DEFAULT_THEME,
+    theme: prevPlan?.theme || DEFAULT_THEME,
     metrics,
     phases,
+    ...(input?.nutritionTargets || prevPlan?.nutritionTargets
+      ? { nutritionTargets: { ...(prevPlan?.nutritionTargets || {}), ...(input?.nutritionTargets || {}) } }
+      : {}),
+    ...(prevPlan?.playbook ? { playbook: prevPlan.playbook } : {}),
     weeks,
-    source: "mcp",
+    source: prevPlan?.source || "mcp",
+    deleted: false,
     updatedAt: now,
   };
 
@@ -179,14 +347,111 @@ export async function upsertUserPlan(email, input, existingDb = null) {
 }
 
 /**
- * Adds a new week or updates an existing week inside any plan for the user.
- * Built-in plans are cloned into `running.user_plans` on first edit so each user's schedule stays isolated.
+ * Updates only plan metadata & status without overwriting `weeks[]`.
+ */
+export async function updateUserPlanMeta(email, planId, patch, existingDb = null) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const db = existingDb || (await getDb());
+
+  const mergedPlans = await getMergedPlansForUser(normalizedEmail, db, { includeArchived: true });
+  const existingPlan = mergedPlans.find((p) => p.id === planId) || getPlanById(planId);
+  if (!existingPlan || existingPlan.id !== planId) {
+    throw new Error(`ไม่พบแผนซ้อมรหัส "${planId}"`);
+  }
+
+  const nextStatus = ["active", "completed", "archived"].includes(patch?.status)
+    ? patch.status
+    : existingPlan.status;
+  const now = new Date();
+  const updatedDoc = {
+    ...existingPlan,
+    email: normalizedEmail,
+    shortName: patch?.shortName !== undefined ? String(patch.shortName).trim().slice(0, 32) : existingPlan.shortName,
+    title: patch?.title !== undefined ? String(patch.title).trim() : existingPlan.title,
+    subtitle: patch?.subtitle !== undefined ? String(patch.subtitle).trim() : existingPlan.subtitle,
+    badge: patch?.badge !== undefined ? String(patch.badge).trim() : existingPlan.badge,
+    periodLabel: patch?.periodLabel !== undefined ? String(patch.periodLabel).trim() : existingPlan.periodLabel,
+    startDateStr:
+      patch?.startDateStr && /^\d{4}-\d{2}-\d{2}$/.test(String(patch.startDateStr))
+        ? String(patch.startDateStr)
+        : existingPlan.startDateStr,
+    status: nextStatus,
+    statusLabel:
+      patch?.statusLabel !== undefined
+        ? String(patch.statusLabel)
+        : patch?.status !== undefined
+        ? normalizeStatusLabel(nextStatus)
+        : existingPlan.statusLabel,
+    ...(patch?.metrics !== undefined ? { metrics: patch.metrics } : {}),
+    ...(patch?.phases !== undefined ? { phases: patch.phases } : {}),
+    ...(patch?.nutritionTargets !== undefined
+      ? { nutritionTargets: { ...(existingPlan.nutritionTargets || {}), ...patch.nutritionTargets } }
+      : {}),
+    deleted: false,
+    updatedAt: now,
+  };
+
+  // Optional: make this plan the sole active plan cleanly if requested
+  if (patch?.makePrimaryActive) {
+    for (const p of mergedPlans) {
+      if (p.id !== planId && p.status === "active") {
+        await db.collection("user_plans").updateOne(
+          { email: normalizedEmail, id: p.id },
+          {
+            $set: { ...p, email: normalizedEmail, status: "completed", statusLabel: "สลับไปแผนอื่นแล้ว", updatedAt: now },
+            $setOnInsert: { createdAt: now },
+          },
+          { upsert: true }
+        );
+      }
+    }
+    updatedDoc.status = "active";
+    updatedDoc.statusLabel = normalizeStatusLabel("active", patch?.statusLabel);
+  }
+
+  await db.collection("user_plans").updateOne(
+    { email: normalizedEmail, id: planId },
+    {
+      $set: updatedDoc,
+      $setOnInsert: { createdAt: now },
+    },
+    { upsert: true }
+  );
+
+  return serializePlanDoc(updatedDoc);
+}
+
+/**
+ * Deletes a user plan (hard delete for custom plans, soft tombstone for built-ins).
+ */
+export async function deleteUserPlan(email, planId, existingDb = null) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const db = existingDb || (await getDb());
+  const builtInIds = new Set(PLANS.map((p) => p.id));
+
+  if (builtInIds.has(planId)) {
+    await db.collection("user_plans").updateOne(
+      { email: normalizedEmail, id: planId },
+      { $set: { email: normalizedEmail, id: planId, deleted: true, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true }
+    );
+  } else {
+    const res = await db.collection("user_plans").deleteOne({ email: normalizedEmail, id: planId });
+    if (res.deletedCount === 0) {
+      throw new Error(`ไม่พบแผนซ้อมรหัส "${planId}"`);
+    }
+  }
+  return { deleted: true, planId };
+}
+
+/**
+ * Adds a new week or performs strict partial update on an existing week in any plan.
  */
 export async function upsertUserWeek(email, planId, weekInput, existingDb = null) {
   const normalizedEmail = email.trim().toLowerCase();
   const db = existingDb || (await getDb());
 
-  const mergedPlans = await getMergedPlansForUser(normalizedEmail, db);
+  const mergedPlans = await getMergedPlansForUser(normalizedEmail, db, { includeArchived: true });
   const existingPlan = mergedPlans.find((p) => p.id === planId) || getPlanById(planId);
   if (!existingPlan) {
     throw new Error(`ไม่พบแผนซ้อมรหัส "${planId}"`);
@@ -198,8 +463,8 @@ export async function upsertUserWeek(email, planId, weekInput, existingDb = null
       : existingPlan.weeks.length + 1;
 
   const existingIdx = existingPlan.weeks.findIndex((w) => w.week === targetWeekNum);
-  const baseWeek = existingIdx >= 0 ? existingPlan.weeks[existingIdx] : {};
-  const mergedWeek = normalizeWeek({ ...baseWeek, ...weekInput, week: targetWeekNum }, targetWeekNum);
+  const baseWeek = existingIdx >= 0 ? existingPlan.weeks[existingIdx] : null;
+  const mergedWeek = normalizeWeek(weekInput, targetWeekNum, baseWeek, existingPlan);
 
   const nextWeeks = [...existingPlan.weeks];
   if (existingIdx >= 0) {
@@ -237,5 +502,147 @@ export async function upsertUserWeek(email, planId, weekInput, existingDb = null
     week: mergedWeek,
     action: existingIdx >= 0 ? "updated" : "added",
     totalWeeks: nextWeeks.length,
+  };
+}
+
+/**
+ * Deletes a specific week from a plan.
+ */
+export async function deleteUserWeek(email, planId, weekNum, existingDb = null) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const db = existingDb || (await getDb());
+
+  const mergedPlans = await getMergedPlansForUser(normalizedEmail, db, { includeArchived: true });
+  const existingPlan = mergedPlans.find((p) => p.id === planId) || getPlanById(planId);
+  if (!existingPlan) {
+    throw new Error(`ไม่พบแผนซ้อมรหัส "${planId}"`);
+  }
+
+  const targetNum = Number(weekNum);
+  const nextWeeks = existingPlan.weeks.filter((w) => w.week !== targetNum);
+  if (nextWeeks.length === existingPlan.weeks.length) {
+    throw new Error(`ไม่พบสัปดาห์ที่ ${targetNum} ในแผน "${planId}"`);
+  }
+
+  const now = new Date();
+  await db.collection("user_plans").updateOne(
+    { email: normalizedEmail, id: existingPlan.id },
+    {
+      $set: { ...existingPlan, email: normalizedEmail, weeks: nextWeeks, updatedAt: now },
+      $setOnInsert: { createdAt: now },
+    },
+    { upsert: true }
+  );
+
+  return { deleted: true, planId: existingPlan.id, week: targetNum, remainingWeeks: nextWeeks.length };
+}
+
+/**
+ * Swaps two days (`dayA`, `dayB`) inside a given week atomically, including completion & execution logs.
+ */
+export async function swapWorkoutDays(email, planId, weekNum, dayAInput, dayBInput, swapProgress = true, existingDb = null) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const db = existingDb || (await getDb());
+
+  const dayA = resolveDayKey(dayAInput);
+  const dayB = resolveDayKey(dayBInput);
+  if (!dayA || !dayB || dayA === dayB) {
+    throw new Error("กรุณาระบุ dayA และ dayB ที่แตกต่างกัน (mon..sun หรือ easy/str/inc/long/rec)");
+  }
+
+  const mergedPlans = await getMergedPlansForUser(normalizedEmail, db, { includeArchived: true });
+  const existingPlan = mergedPlans.find((p) => p.id === planId) || getPlanById(planId);
+  if (!existingPlan) {
+    throw new Error(`ไม่พบแผนซ้อมรหัส "${planId}"`);
+  }
+
+  const targetNum = Number(weekNum);
+  const idx = existingPlan.weeks.findIndex((w) => w.week === targetNum);
+  if (idx < 0) {
+    throw new Error(`ไม่พบสัปดาห์ที่ ${targetNum} ในแผน "${existingPlan.id}"`);
+  }
+
+  const normalizedWeek = normalizeWeek({}, targetNum, existingPlan.weeks[idx], existingPlan);
+  const slotA = { ...normalizedWeek.days[dayA] };
+  const slotB = { ...normalizedWeek.days[dayB] };
+
+  // Swap workout payload while preserving each calendar day's label/dayKey
+  normalizedWeek.days[dayA] = {
+    ...slotB,
+    dayKey: dayA,
+    label: DAY_META[dayA].label,
+    shortLabel: DAY_META[dayA].short,
+  };
+  normalizedWeek.days[dayB] = {
+    ...slotA,
+    dayKey: dayB,
+    label: DAY_META[dayB].label,
+    shortLabel: DAY_META[dayB].short,
+  };
+
+  syncFlatFieldsFromDays(normalizedWeek, normalizedWeek.days);
+
+  const nextWeeks = [...existingPlan.weeks];
+  nextWeeks[idx] = normalizedWeek;
+  const now = new Date();
+
+  await db.collection("user_plans").updateOne(
+    { email: normalizedEmail, id: existingPlan.id },
+    {
+      $set: { ...existingPlan, email: normalizedEmail, weeks: nextWeeks, updatedAt: now },
+      $setOnInsert: { createdAt: now },
+    },
+    { upsert: true }
+  );
+
+  // Also swap completion state + execution logs if requested
+  if (swapProgress) {
+    const progressDoc = await db.collection("user_progress").findOne({ email: normalizedEmail, planId: existingPlan.id });
+    if (progressDoc) {
+      const completedDays = { ...(progressDoc.completedDays || {}) };
+      const executionLogs = { ...(progressDoc.executionLogs || {}) };
+
+      const keyA = `W${targetNum}-${dayA}`;
+      const legA = DAY_KEY_TO_LEGACY[dayA] ? `W${targetNum}-${DAY_KEY_TO_LEGACY[dayA]}` : null;
+      const keyB = `W${targetNum}-${dayB}`;
+      const legB = DAY_KEY_TO_LEGACY[dayB] ? `W${targetNum}-${DAY_KEY_TO_LEGACY[dayB]}` : null;
+
+      const doneA = completedDays[keyA] !== undefined ? completedDays[keyA] : legA ? completedDays[legA] : undefined;
+      const doneB = completedDays[keyB] !== undefined ? completedDays[keyB] : legB ? completedDays[legB] : undefined;
+      const logA = executionLogs[keyA] || (legA ? executionLogs[legA] : undefined);
+      const logB = executionLogs[keyB] || (legB ? executionLogs[legB] : undefined);
+
+      if (doneB !== undefined) completedDays[keyA] = doneB;
+      else delete completedDays[keyA];
+      if (legA) delete completedDays[legA];
+
+      if (doneA !== undefined) completedDays[keyB] = doneA;
+      else delete completedDays[keyB];
+      if (legB) delete completedDays[legB];
+
+      if (logB !== undefined) executionLogs[keyA] = logB;
+      else delete executionLogs[keyA];
+      if (legA) delete executionLogs[legA];
+
+      if (logA !== undefined) executionLogs[keyB] = logA;
+      else delete executionLogs[keyB];
+      if (legB) delete executionLogs[legB];
+
+      await db.collection("user_progress").updateOne(
+        { email: normalizedEmail, planId: existingPlan.id },
+        { $set: { completedDays, executionLogs, updatedAt: now } }
+      );
+    }
+  }
+
+  return {
+    status: "swapped",
+    planId: existingPlan.id,
+    week: targetNum,
+    swapped: [dayA, dayB],
+    days: {
+      [dayA]: normalizedWeek.days[dayA],
+      [dayB]: normalizedWeek.days[dayB],
+    },
   };
 }

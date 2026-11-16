@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../lib/mongodb.js";
 import {
+  MCP_RESOURCES,
   MCP_SERVER_INFO,
   MCP_TOOLS,
   authenticateMcpRequest,
   executeMcpTool,
+  readMcpResource,
 } from "../../../lib/mcp.js";
 
 const CORS_HEADERS = {
@@ -43,6 +45,7 @@ export async function GET(request) {
         user: auth.email,
         transport: "streamable-http",
         tools: MCP_TOOLS,
+        resources: MCP_RESOURCES,
       },
       { headers: CORS_HEADERS }
     );
@@ -69,6 +72,7 @@ async function handleJsonRpcMessage(msg, email) {
       protocolVersion: params?.protocolVersion || "2024-11-05",
       capabilities: {
         tools: { listChanged: true },
+        resources: {},
       },
       serverInfo: MCP_SERVER_INFO,
     });
@@ -80,6 +84,23 @@ async function handleJsonRpcMessage(msg, email) {
 
   if (method === "tools/list") {
     return rpcResult(id, { tools: MCP_TOOLS });
+  }
+
+  if (method === "resources/list") {
+    return rpcResult(id, { resources: MCP_RESOURCES });
+  }
+
+  if (method === "resources/read") {
+    const uri = params?.uri;
+    if (!uri || typeof uri !== "string") {
+      return rpcError(id, -32602, "Missing resource uri");
+    }
+    try {
+      const resourceData = await readMcpResource(uri, email);
+      return rpcResult(id, resourceData);
+    } catch (resErr) {
+      return rpcError(id, -32002, resErr?.message || "Resource read failed");
+    }
   }
 
   if (method === "tools/call") {

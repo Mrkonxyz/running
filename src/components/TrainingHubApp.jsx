@@ -11,6 +11,15 @@ import { LoginModal } from "./LoginModal.jsx";
 import { MCPConnectModal } from "./MCPConnectModal.jsx";
 import { PlanSwitcher } from "./PlanSwitcher.jsx";
 import {
+  DAYS_ORDER,
+  DAY_KEY_TO_LEGACY,
+  JS_DAY_TO_KEY,
+  buildStructuredDay,
+  countPlanProgress,
+  getSessionCompletion,
+  resolveDayKey,
+} from "../lib/schedule-utils.js";
+import {
   BarChartIcon,
   BookOpenIcon,
   BrandMark,
@@ -39,16 +48,6 @@ function getCurrentWeekForPlan(plan) {
   return Math.min(Math.max(currentW, 1), plan.weeks.length);
 }
 
-const JS_DAY_TO_TYPE = {
-  0: "rec",
-  1: null,
-  2: "easy",
-  3: "str",
-  4: "inc",
-  5: null,
-  6: "long",
-};
-
 const subscribeHydrated = () => () => {};
 
 function useIsHydrated() {
@@ -73,6 +72,7 @@ export function TrainingHubApp({
   initialUser = null,
   initialSession = null,
   initialProgressByPlan = {},
+  initialExecutionLogsByPlan = {},
   initialPlans = null,
 }) {
   const router = useRouter();
@@ -173,6 +173,7 @@ export function TrainingHubApp({
   const [focusedDay, setFocusedDay] = useState(() => new Date().getDay());
 
   const [allProgress, setAllProgress] = useState(() => ({ ...(initialProgressByPlan || {}) }));
+  const [allExecutionLogs, setAllExecutionLogs] = useState(() => ({ ...(initialExecutionLogsByPlan || {}) }));
 
   const syncPlansAndProgress = useCallback(async () => {
     try {
@@ -190,6 +191,9 @@ export function TrainingHubApp({
         const pData = await pRes.json();
         if (pData.ok && pData.progressByPlan) {
           setAllProgress(pData.progressByPlan);
+        }
+        if (pData.ok && pData.executionLogsByPlan) {
+          setAllExecutionLogs(pData.executionLogsByPlan);
         }
       }
       setSyncStatus("synced");
@@ -238,6 +242,11 @@ export function TrainingHubApp({
   const progressState = useMemo(
     () => (user ? allProgress[activePlan.id] || {} : {}),
     [user, allProgress, activePlan.id]
+  );
+
+  const executionLogsState = useMemo(
+    () => (user ? allExecutionLogs[activePlan.id] || {} : {}),
+    [user, allExecutionLogs, activePlan.id]
   );
 
   const syncPlanProgressToMongo = useCallback(
@@ -370,11 +379,27 @@ export function TrainingHubApp({
   const handleToggleDay = (key, explicitValue) => {
     if (!requireAuthOrPrompt()) return;
     const currentPlanProgress = allProgress[activePlan.id] || {};
-    const nextVal = typeof explicitValue ==="boolean" ? explicitValue : !currentPlanProgress[key];
-    const nextPlanProgress = {
-      ...currentPlanProgress,
-      [key]: nextVal,
-    };
+    const match = /^W(\d+)-(.+)$/.exec(String(key || ""));
+    let nextPlanProgress;
+    if (match) {
+      const weekNum = Number(match[1]);
+      const dayKey = resolveDayKey(match[2]);
+      const comp = getSessionCompletion(currentPlanProgress, executionLogsState, weekNum, dayKey);
+      const nextVal = typeof explicitValue === "boolean" ? explicitValue : !comp.completed;
+      nextPlanProgress = {
+        ...currentPlanProgress,
+        [comp.progressKey]: nextVal,
+      };
+      if (comp.legacyKey) {
+        nextPlanProgress[comp.legacyKey] = nextVal;
+      }
+    } else {
+      const nextVal = typeof explicitValue === "boolean" ? explicitValue : !currentPlanProgress[key];
+      nextPlanProgress = {
+        ...currentPlanProgress,
+        [key]: nextVal,
+      };
+    }
     setAllProgress((prev) => ({
       ...prev,
       [activePlan.id]: nextPlanProgress,
@@ -385,9 +410,22 @@ export function TrainingHubApp({
   const handleToggleWeekAll = (weekNum, markComplete) => {
     if (!requireAuthOrPrompt()) return;
     const currentPlanProgress = { ...(allProgress[activePlan.id] || {}) };
-    ["easy","str","inc","long","rec"].forEach((t) => {
-      currentPlanProgress[`W${weekNum}-${t}`] = markComplete;
-    });
+    const weekObj = activePlan.weeks.find((w) => w.week === weekNum);
+    if (weekObj) {
+      DAYS_ORDER.forEach((dk) => {
+        const dayObj = buildStructuredDay(weekObj, dk, activePlan);
+        if (!dayObj.isRest) {
+          currentPlanProgress[`W${weekNum}-${dk}`] = markComplete;
+          if (DAY_KEY_TO_LEGACY[dk]) {
+            currentPlanProgress[`W${weekNum}-${DAY_KEY_TO_LEGACY[dk]}`] = markComplete;
+          }
+        }
+      });
+    } else {
+      ["easy", "str", "inc", "long", "rec"].forEach((t) => {
+        currentPlanProgress[`W${weekNum}-${t}`] = markComplete;
+      });
+    }
     setAllProgress((prev) => ({
       ...prev,
       [activePlan.id]: currentPlanProgress,
@@ -406,14 +444,11 @@ export function TrainingHubApp({
     }
   };
 
-  const totalWorkouts = activePlan.weeks.length * 5;
-  let completedCount = 0;
-  activePlan.weeks.forEach((w) => {
-    ["easy","str","inc","long","rec"].forEach((t) => {
-      if (progressState[`W${w.week}-${t}`]) completedCount++;
-    });
-  });
-  const percent = totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
+  const {
+    completed: completedCount,
+    total: totalWorkouts,
+    percent,
+  } = countPlanProgress(activePlan, progressState);
 
   let filteredWeeks = [];
   if (activeFilter ==="all") {
@@ -426,7 +461,6 @@ export function TrainingHubApp({
 
   const now = new Date();
   const jsDay = now.getDay();
-  const todayDayType = JS_DAY_TO_TYPE[jsDay] ?? null;
   const todayThaiLabel = now.toLocaleDateString("th-TH", {
     weekday: "long",
     day: "numeric",
@@ -437,88 +471,119 @@ export function TrainingHubApp({
 
   const getPrescriptionForWeekDay = (weekObj, dayNum, planId) => {
     if (!weekObj) return null;
-    const isHybrid = planId ==="hybrid-2026";
-    if (dayNum === 1) {
-      return {
-        dayNum,
-        short: "จ",
-        isRest: true,
-        nextGuideType: "str",
-        label: "วันจันทร์ • Rest & Active NEAT",
-        shortTitle: "วันพัก",
-        title: "วันพักกล้ามเนื้อ",
-        detail: weekObj.monRest,
-      };
-    }
-    if (dayNum === 5) {
-      return {
-        dayNum,
-        short: "ศ",
-        isRest: true,
-        nextGuideType: "long",
-        label: "วันศุกร์ • Rest & Mobility",
-        shortTitle: "วันพัก",
-        title: "วันพักเตรียมความสด",
-        detail: weekObj.friRest,
-      };
-    }
-    const map = {
-      2: {
-        dayNum: 2,
-        short: "อ",
-        type: "easy",
-        label: isHybrid ? "วันอังคาร • Chill Z2 Run" : "วันอังคาร • Easy Road",
+    const isHybrid = planId === "hybrid-2026";
+    const dayKey = JS_DAY_TO_KEY[dayNum] || "mon";
+    const structured = buildStructuredDay(weekObj, dayKey, activePlan);
+    const shortMap = { mon: "จ", tue: "อ", wed: "พ", thu: "พฤ", fri: "ศ", sat: "ส", sun: "อา" };
+    const dayFullLabel = structured.label || `วัน${shortMap[dayKey]}`;
+
+    const typeMetaMap = {
+      chill_z2_run: {
+        guideType: "easy",
         shortTitle: isHybrid ? "Z2 Run" : "Easy",
-        title: weekObj.tueTarget,
-        detail: weekObj.tueDetail,
+        headline: isHybrid ? "Chill Z2 Run" : "Easy Road",
         accent: "border-t-pocariBlue text-pocariBlue dark:text-sky-400",
       },
-      3: {
-        dayNum: 3,
-        short: "พ",
-        type: "str",
-        label: isHybrid ? "วันพุธ • Strength Day A" : "วันพุธ • Strength",
+      easy: {
+        guideType: "easy",
+        shortTitle: isHybrid ? "Z2 Run" : "Easy",
+        headline: isHybrid ? "Chill Z2 Run" : "Easy Road",
+        accent: "border-t-pocariBlue text-pocariBlue dark:text-sky-400",
+      },
+      strength_a: {
+        guideType: "str",
         shortTitle: "เวท A",
-        title: weekObj.wedTarget,
-        detail: weekObj.wedDetail,
+        headline: isHybrid ? "Strength Day A" : "Strength",
         accent: "border-t-purple-500 text-purple-700 dark:text-purple-400",
       },
-      4: {
-        dayNum: 4,
-        short: "พฤ",
-        type: "inc",
-        label: isHybrid
-          ? weekObj.isRecovery
-            ? "วันพฤหัสบดี • Flat Cardio"
-            : "วันพฤหัสบดี • Steep Incline"
-          : "วันพฤหัสบดี • Treadmill Incline",
+      str: {
+        guideType: "str",
+        shortTitle: "เวท A",
+        headline: isHybrid ? "Strength Day A" : "Strength",
+        accent: "border-t-purple-500 text-purple-700 dark:text-purple-400",
+      },
+      incline_walk: {
+        guideType: "inc",
         shortTitle: isHybrid ? (weekObj.isRecovery ? "Cardio" : "เดินชัน") : "Treadmill",
-        title: weekObj.thuTarget,
-        detail: weekObj.thuDetail,
+        headline: isHybrid ? (weekObj.isRecovery ? "Flat Cardio" : "Steep Incline") : "Treadmill Incline",
         accent: "border-t-treadmillGreen text-emerald-700 dark:text-emerald-400",
       },
-      6: {
-        dayNum: 6,
-        short: "ส",
-        type: "long",
-        label: isHybrid ? "วันเสาร์ • Long Run / Football" : "วันเสาร์ • Long Run",
+      inc: {
+        guideType: "inc",
+        shortTitle: isHybrid ? (weekObj.isRecovery ? "Cardio" : "เดินชัน") : "Treadmill",
+        headline: isHybrid ? (weekObj.isRecovery ? "Flat Cardio" : "Steep Incline") : "Treadmill Incline",
+        accent: "border-t-treadmillGreen text-emerald-700 dark:text-emerald-400",
+      },
+      long_run: {
+        guideType: "long",
         shortTitle: "Long",
-        title: weekObj.satTarget,
-        detail: weekObj.satDetail,
+        headline: isHybrid ? "Long Run / Football" : "Long Run",
         accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
       },
-      0: {
-        dayNum: 0,
-        short: "อา",
-        type: "rec",
-        label: isHybrid ? "วันอาทิตย์ • Strength Day B" : "วันอาทิตย์ • Recovery",
+      long: {
+        guideType: "long",
+        shortTitle: "Long",
+        headline: isHybrid ? "Long Run / Football" : "Long Run",
+        accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
+      },
+      football: {
+        guideType: "long",
+        shortTitle: "บอล",
+        headline: "Football Match",
+        accent: "border-t-amber-500 text-amber-700 dark:text-amber-400",
+      },
+      strength_b: {
+        guideType: "rec",
+        shortTitle: "เวท B",
+        headline: "Strength Day B",
+        accent: "border-t-indigo-500 text-indigo-700 dark:text-indigo-400",
+      },
+      recovery: {
+        guideType: "rec",
         shortTitle: isHybrid ? "เวท B" : "Recovery",
-        title: weekObj.sunTarget,
-        detail: weekObj.sunDetail,
+        headline: isHybrid ? "Strength Day B" : "Recovery",
+        accent: "border-t-indigo-500 text-indigo-700 dark:text-indigo-400",
+      },
+      rec: {
+        guideType: "rec",
+        shortTitle: isHybrid ? "เวท B" : "Recovery",
+        headline: isHybrid ? "Strength Day B" : "Recovery",
         accent: "border-t-indigo-500 text-indigo-700 dark:text-indigo-400",
       },
     };
-    return { isRest: false, ...(map[dayNum] || map[2]) };
+
+    if (structured.isRest) {
+      return {
+        dayNum,
+        dayKey,
+        short: shortMap[dayKey],
+        isRest: true,
+        nextGuideType: dayKey === "fri" ? "long" : "str",
+        guideType: "str",
+        type: "rest",
+        label: `${dayFullLabel} • ${structured.target || "Rest & Recovery"}`,
+        shortTitle: "วันพัก",
+        title: structured.target || "วันพักกล้ามเนื้อ",
+        detail: structured.detail || "พักฟื้นร่างกาย",
+      };
+    }
+
+    const meta = typeMetaMap[structured.type] || typeMetaMap.easy;
+    return {
+      dayNum,
+      dayKey,
+      short: shortMap[dayKey],
+      isRest: false,
+      type: meta.guideType,
+      sessionType: structured.type,
+      guideType: meta.guideType,
+      label: `${dayFullLabel} • ${meta.headline}`,
+      shortTitle: meta.shortTitle,
+      title: structured.target,
+      detail: structured.detail,
+      exercises: structured.exercises,
+      accent: meta.accent,
+    };
   };
 
   const getDateLabelForWeekDay = (startDateStr, weekNum, dayNum) => {
@@ -534,15 +599,23 @@ export function TrainingHubApp({
     });
   };
 
-  const todaySpotlight = activePlan.status ==="active" ? getPrescriptionForWeekDay(todayWeekObj, jsDay, activePlan.id) : null;
-  const todayKey = todayDayType ? `W${currentWeek}-${todayDayType}` : null;
-  const isTodayCompleted = todayKey ? !!progressState[todayKey] : false;
+  const todaySpotlight = activePlan.status === "active" ? getPrescriptionForWeekDay(todayWeekObj, jsDay, activePlan.id) : null;
+  const todayComp =
+    todaySpotlight && !todaySpotlight.isRest
+      ? getSessionCompletion(progressState, executionLogsState, currentWeek, todaySpotlight.dayKey)
+      : null;
+  const todayKey = todayComp?.progressKey || null;
+  const isTodayCompleted = Boolean(todayComp?.completed);
 
   const focusedWeekObj = activePlan.weeks.find((w) => w.week === focusedWeek) || activePlan.weeks[0];
   const focusedPrescription = getPrescriptionForWeekDay(focusedWeekObj, focusedDay, activePlan.id);
   const focusedDateLabel = getDateLabelForWeekDay(activePlan.startDateStr, focusedWeekObj?.week || 1, focusedDay);
-  const focusedKey = focusedPrescription && !focusedPrescription.isRest ? `W${focusedWeekObj.week}-${focusedPrescription.type}` : null;
-  const isFocusedCompleted = focusedKey ? !!progressState[focusedKey] : false;
+  const focusedComp =
+    focusedPrescription && !focusedPrescription.isRest
+      ? getSessionCompletion(progressState, executionLogsState, focusedWeekObj.week, focusedPrescription.dayKey)
+      : null;
+  const focusedKey = focusedComp?.progressKey || null;
+  const isFocusedCompleted = Boolean(focusedComp?.completed);
   const isViewingToday = activePlan.status ==="active" && focusedWeek === currentWeek && focusedDay === jsDay;
   const WEEK_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
@@ -1019,8 +1092,10 @@ export function TrainingHubApp({
               >
                 {WEEK_DAY_ORDER.map((dNum) => {
                   const info = getPrescriptionForWeekDay(focusedWeekObj, dNum, activePlan.id);
-                  const dKey = info && !info.isRest ? `W${focusedWeekObj.week}-${info.type}` : null;
-                  const done = dKey ? !!progressState[dKey] : false;
+                  const dComp = info && !info.isRest
+                    ? getSessionCompletion(progressState, executionLogsState, focusedWeekObj?.week, info.dayKey)
+                    : null;
+                  const done = Boolean(dComp?.completed);
                   const isSelected = focusedDay === dNum;
                   const isToday = activePlan.status === "active" && focusedWeek === currentWeek && jsDay === dNum;
 
@@ -1355,14 +1430,16 @@ export function TrainingHubApp({
                     <WeekCard
                       key={`${activePlan.id}-w${w.week}`}
                       week={w}
+                      plan={activePlan}
                       planId={activePlan.id}
                       progressState={progressState}
+                      executionLogs={executionLogsState}
                       onToggleDay={handleToggleDay}
                       onToggleWeekAll={handleToggleWeekAll}
                       onOpenGuide={(type, weekNum) => setModalGuide({ type, weekNum })}
                       startDateStr={activePlan.startDateStr}
                       isCurrentWeek={activePlan.status ==="active" && w.week === currentWeek}
-                      todayDayType={activePlan.status ==="active" && w.week === currentWeek ? todayDayType : null}
+                      todayDayType={activePlan.status ==="active" && w.week === currentWeek ? JS_DAY_TO_KEY[jsDay] : null}
                       isAuthenticated={Boolean(user)}
                     />
                   ))}

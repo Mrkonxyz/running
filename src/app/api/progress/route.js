@@ -23,13 +23,18 @@ export async function GET() {
     ]);
 
     const progressByPlan = {};
+    const executionLogsByPlan = {};
     for (const doc of progressDocs) {
       progressByPlan[doc.planId] = doc.completedDays || {};
+      if (doc.executionLogs) {
+        executionLogsByPlan[doc.planId] = doc.executionLogs;
+      }
     }
 
     const response = NextResponse.json({
       ok: true,
       progressByPlan,
+      executionLogsByPlan,
       plansCount,
     });
 

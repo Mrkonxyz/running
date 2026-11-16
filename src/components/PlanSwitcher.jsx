@@ -10,20 +10,10 @@ import {
   TrophyIcon,
 } from "./Icons.jsx";
 
-const DAY_KEYS = ["easy", "str", "inc", "long", "rec"];
+import { countPlanProgress } from "../lib/schedule-utils.js";
 
 function getPlanProgressStats(plan, allProgress) {
-  const pMap = allProgress?.[plan.id] || {};
-  const weeks = Array.isArray(plan.weeks) ? plan.weeks : [];
-  const total = weeks.length * DAY_KEYS.length;
-  let completed = 0;
-  for (const w of weeks) {
-    for (const d of DAY_KEYS) {
-      if (pMap[`W${w.week}-${d}`]) completed += 1;
-    }
-  }
-  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-  return { completed, total, percent };
+  return countPlanProgress(plan, allProgress?.[plan.id] || {});
 }
 
 export function PlanSwitcher({

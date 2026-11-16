@@ -278,19 +278,19 @@ export function MCPConnectModal({ isOpen, onClose, userEmail, onPlansSynced }) {
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-300">
             <li className="flex items-center gap-1.5">
               <CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>อ่านรายชื่อแผนและสถิติรวม</span>
+              <span>ดูโปรแกรมรายวัน รายสัปดาห์ และทุกแผนซ้อม</span>
             </li>
             <li className="flex items-center gap-1.5">
               <CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>ดูตารางซ้อมรายสัปดาห์และวันนี้</span>
+              <span>สร้างแผนใหม่ ปรับตาราง หรือสลับวันซ้อมได้ทันที</span>
             </li>
             <li className="flex items-center gap-1.5">
               <CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>ให้ AI สร้างแผนซ้อมใหม่ได้ทันที</span>
+              <span>บันทึกผลซ้อม สถิติเวทเทรนนิ่ง และองค์ประกอบร่างกาย</span>
             </li>
             <li className="flex items-center gap-1.5">
               <CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>เพิ่มหรือแก้ไขตารางซ้อมรายสัปดาห์</span>
+              <span>ติดตามการนอน ความพร้อม และเป้าหมายโภชนาการรายวัน</span>
             </li>
           </ul>
         </div>

@@ -10,6 +10,7 @@ export default async function HomePage() {
   let initialUser = null;
   let initialSession = null;
   let initialProgressByPlan = {};
+  let initialExecutionLogsByPlan = {};
   let initialPlans = null;
 
   try {
@@ -26,6 +27,7 @@ export default async function HomePage() {
       ]);
       for (const doc of progressDocs) {
         initialProgressByPlan[doc.planId] = doc.completedDays || {};
+        initialExecutionLogsByPlan[doc.planId] = doc.executionLogs || {};
       }
       initialPlans = mergedPlans;
     }
@@ -38,6 +40,7 @@ export default async function HomePage() {
       initialUser={initialUser}
       initialSession={initialSession}
       initialProgressByPlan={initialProgressByPlan}
+      initialExecutionLogsByPlan={initialExecutionLogsByPlan}
       initialPlans={initialPlans}
     />
   );
