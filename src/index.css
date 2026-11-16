@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-pocariBlue: #0052cc;
   --color-pocariLight: #00a3bf;
@@ -11,83 +13,113 @@
 
 :root {
   font-family: 'Prompt', sans-serif;
-  background-color: #f4f5f7;
+  color-scheme: light dark;
+
+  --color-accent-light: #0052cc;
+  --color-accent-dark: #38bdf8;
+  --accent-color: var(--color-accent-light);
+  --surface-canvas-light: #f8fafc;
+  --surface-canvas-dark: #020617;
+  --surface-canvas: var(--surface-canvas-light);
+
+  @media (prefers-color-scheme: dark) {
+    --accent-color: var(--color-accent-dark);
+    --surface-canvas: var(--surface-canvas-dark);
+  }
+
+  @supports (color: light-dark(white, black)) {
+    --accent-color: light-dark(var(--color-accent-light), var(--color-accent-dark));
+    --surface-canvas: light-dark(var(--surface-canvas-light), var(--surface-canvas-dark));
+  }
+
+  accent-color: var(--accent-color);
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+}
+
+body {
+  background-color: var(--surface-canvas);
 }
 
 /* Custom Exercise Animations */
 @keyframes pressMotion {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 .animate-press {
-    animation: pressMotion 2s ease-in-out infinite;
+  animation: pressMotion 2s ease-in-out infinite;
 }
 
 @keyframes raiseMotionLeft {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-50deg); }
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-50deg); }
 }
 .animate-raise-left {
-    animation: raiseMotionLeft 2s ease-in-out infinite;
-    transform-origin: 50px 35px;
+  animation: raiseMotionLeft 2s ease-in-out infinite;
+  transform-origin: 50px 35px;
 }
 
 @keyframes raiseMotionRight {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(50deg); }
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(50deg); }
 }
 .animate-raise-right {
-    animation: raiseMotionRight 2s ease-in-out infinite;
-    transform-origin: 50px 35px;
+  animation: raiseMotionRight 2s ease-in-out infinite;
+  transform-origin: 50px 35px;
 }
 
 @keyframes curlMotion {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-80deg); }
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-80deg); }
 }
 .animate-curl {
-    animation: curlMotion 1.8s ease-in-out infinite;
-    transform-origin: 48px 50px;
+  animation: curlMotion 1.8s ease-in-out infinite;
+  transform-origin: 48px 50px;
 }
 
 @keyframes rowMotion {
-    0%, 100% { transform: translateY(5px); }
-    50% { transform: translateY(-6px); }
+  0%, 100% { transform: translateY(5px); }
+  50% { transform: translateY(-6px); }
 }
 .animate-row {
-    animation: rowMotion 2s ease-in-out infinite;
+  animation: rowMotion 2s ease-in-out infinite;
 }
 
 @keyframes squatMotion {
-    0%, 100% { transform: translateY(0) scaleY(1); }
-    50% { transform: translateY(10px) scaleY(0.8); }
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(10px) scaleY(0.8); }
 }
 .animate-squat {
-    animation: squatMotion 2.2s ease-in-out infinite;
-    transform-origin: bottom center;
+  animation: squatMotion 2.2s ease-in-out infinite;
+  transform-origin: bottom center;
 }
 
 @keyframes stepMotion {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 .animate-step {
-    animation: stepMotion 2.4s ease-in-out infinite;
+  animation: stepMotion 2.4s ease-in-out infinite;
 }
 
 @keyframes calfMotion {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 .animate-calf {
-    animation: calfMotion 1.6s ease-in-out infinite;
+  animation: calfMotion 1.6s ease-in-out infinite;
 }
 
 @keyframes tuckMotion {
-    0%, 100% { transform: scaleX(1) translateX(0); }
-    50% { transform: scaleX(0.75) translateX(-6px); }
+  0%, 100% { transform: scaleX(1) translateX(0); }
+  50% { transform: scaleX(0.75) translateX(-6px); }
 }
 .animate-tuck {
-    animation: tuckMotion 2.2s ease-in-out infinite;
-    transform-origin: 45px 60px;
+  animation: tuckMotion 2.2s ease-in-out infinite;
+  transform-origin: 45px 60px;
 }
