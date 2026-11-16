@@ -7,61 +7,113 @@ function getWeekRangeLabel(wNum, startDateStr) {
   return `${start.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })}`;
 }
 
-export function WeekCard({ week, progressState, onCheckChange, onOpenGuide, startDateStr }) {
+export function WeekCard({ week, planId, progressState, onCheckChange, onOpenGuide, startDateStr, isCurrentWeek }) {
   const rangeLabel = getWeekRangeLabel(week.week, startDateStr);
 
-  let bgStyle = "bg-white border-gray-200";
-  let borderLeftColor = "border-l-pocariBlue";
+  let cardSurface = "bg-white border-slate-200/90";
+  let badgeStyle = "bg-slate-100 text-slate-600";
   if (week.isRecovery) {
-    bgStyle = "bg-sky-50/40 border-sky-300";
-    borderLeftColor = "border-l-pocariLight";
+    cardSurface = "bg-sky-50/40 border-sky-200";
+    badgeStyle = "bg-sky-100 text-sky-700";
   } else if (week.isEasy) {
-    bgStyle = "bg-emerald-50/30 border-emerald-300";
-    borderLeftColor = "border-l-treadmillGreen";
+    cardSurface = "bg-emerald-50/35 border-emerald-200";
+    badgeStyle = "bg-emerald-100 text-emerald-700";
   } else if (week.isPeak) {
-    bgStyle = "bg-amber-50/40 border-amber-400";
-    borderLeftColor = "border-l-amber-500";
-  } else if (week.isGoal) {
-    bgStyle = "bg-blue-50/50 border-pocariBlue ring-2 ring-pocariBlue/20";
-    borderLeftColor = "border-l-pocariBlue";
+    cardSurface = "bg-amber-50/45 border-amber-300";
+    badgeStyle = "bg-amber-100 text-amber-800";
+  } else if (week.isRace || week.isGoal) {
+    cardSurface = "bg-indigo-50/45 border-indigo-300 ring-2 ring-indigo-500/15";
+    badgeStyle = "bg-indigo-100 text-indigo-700";
   }
 
+  const isHybrid = planId === "hybrid-2026";
+
   const days = [
-    { type: 'easy', label: 'อังคาร (Office)', title: 'Chill Z2 Run', target: week.tueTarget, color: 'text-pocariBlue' },
-    { type: 'str', label: 'พุธ (Office)', title: 'Strength A', target: week.wedTarget, color: 'text-purple-600' },
-    { type: 'inc', label: 'พฤหัสบดี (Office)', title: week.isRecovery ? 'Flat Cardio' : 'Steep Incline', target: week.thuTarget, color: 'text-treadmillGreen' },
-    { type: 'long', label: 'เสาร์ (Weekend)', title: 'Long Run / ⚽', target: week.satTarget, color: 'text-amber-600' },
-    { type: 'rec', label: 'อาทิตย์ (Weekend)', title: 'Strength B', target: week.sunTarget, color: 'text-indigo-600' }
+    {
+      type: "easy",
+      label: "อังคาร",
+      title: isHybrid ? "Chill Z2 Run" : "Easy Road",
+      target: week.tueTarget,
+      detail: week.tueDetail,
+      accent: "border-t-pocariBlue text-pocariBlue",
+    },
+    {
+      type: "str",
+      label: "พุธ",
+      title: isHybrid ? "Strength A" : "Strength",
+      target: week.wedTarget,
+      detail: week.wedDetail,
+      accent: "border-t-purple-500 text-purple-700",
+    },
+    {
+      type: "inc",
+      label: "พฤหัสบดี",
+      title: isHybrid ? (week.isRecovery ? "Flat Cardio" : "Steep Incline") : "Treadmill",
+      target: week.thuTarget,
+      detail: week.thuDetail,
+      accent: "border-t-treadmillGreen text-emerald-700",
+    },
+    {
+      type: "long",
+      label: "เสาร์",
+      title: isHybrid ? "Long Run / ⚽" : "Long Run",
+      target: week.satTarget,
+      detail: week.satDetail,
+      accent: "border-t-amber-500 text-amber-700",
+    },
+    {
+      type: "rec",
+      label: "อาทิตย์",
+      title: isHybrid ? "Strength B" : "Recovery",
+      target: week.sunTarget,
+      detail: week.sunDetail,
+      accent: "border-t-indigo-500 text-indigo-700",
+    },
   ];
 
+  const completedInWeek = days.filter((d) => progressState[`W${week.week}-${d.type}`]).length;
+
   return (
-    <div className={`${bgStyle} rounded-2xl p-5 border-l-4 shadow-sm relative transition hover:shadow-md ${borderLeftColor}`}>
+    <div className={`${cardSurface} rounded-2xl p-5 sm:p-6 border shadow-sm transition hover:shadow-md`}>
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
         <div>
-          <span className="text-[10px] text-gray-400 font-bold tracking-wider block">
-            WEEK {week.week} ({rangeLabel}) • 1 ACTIVITY / DAY
-          </span>
-          <h3 className="text-base font-bold mt-0.5 text-slate-800">
-            {week.title}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-slate-400 font-bold tracking-wider uppercase">
+              WEEK {week.week} • {rangeLabel}
+            </span>
+            {isCurrentWeek && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pocariBlue text-white">
+                สัปดาห์ปัจจุบัน
+              </span>
+            )}
+          </div>
+          <h3 className="text-base sm:text-lg font-bold mt-1 text-slate-800">{week.title}</h3>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-bold">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200/80">
+            {completedInWeek}/5 เสร็จสิ้น
+          </span>
+          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-bold ${badgeStyle}`}>
             {week.phaseLabel}
           </span>
         </div>
       </div>
 
-      <p className="text-xs text-gray-600 bg-white/80 p-2.5 rounded-lg border border-gray-100 mb-3 leading-relaxed">
-        <b>โฟกัส:</b> {week.focus}
-      </p>
-
-      <div className="flex items-center justify-between text-[10px] text-gray-400 mb-3 px-1">
-        <span>🛌 <b>จ. & ศ.:</b> Rest + Active NEAT (8,000+ ก้าว | Fat-Burn 1,850–2,000 kcal)</span>
+      {/* Focus & Nutrition */}
+      <div className="bg-white/90 rounded-xl p-3 border border-slate-200/70 mb-4 space-y-1.5">
+        <p className="text-xs sm:text-[13px] text-slate-700 leading-relaxed">
+          <span className="font-bold text-slate-900">🎯 โฟกัสสัปดาห์นี้:</span> {week.focus}
+        </p>
+        {week.nutritionNote && (
+          <p className="text-[11px] sm:text-xs text-emerald-700 font-medium">
+            🥗 {week.nutritionNote}
+          </p>
+        )}
       </div>
 
-      {/* 5-day columns layout */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      {/* 5 Active Training Days */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mb-3">
         {days.map((day) => {
           const key = `W${week.week}-${day.type}`;
           const isChecked = !!progressState[key];
@@ -70,29 +122,49 @@ export function WeekCard({ week, progressState, onCheckChange, onOpenGuide, star
             <div
               key={day.type}
               onClick={() => onOpenGuide(day.type, week.week)}
-              className={`p-2.5 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+              className={`rounded-xl border border-t-4 p-3 flex flex-col justify-between cursor-pointer transition group ${day.accent} ${
                 isChecked
-                  ? 'bg-emerald-50/70 border-emerald-200 hover:bg-emerald-50'
-                  : 'bg-gray-50 hover:bg-gray-100 border-gray-100'
+                  ? "bg-emerald-50/75 border-emerald-200"
+                  : "bg-slate-50/80 hover:bg-white border-slate-200/80 hover:shadow-sm"
               }`}
             >
               <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-bold text-gray-400">{day.label}</span>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    {day.label}
+                  </span>
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={(e) => onCheckChange(e, key)}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded text-pocariBlue focus:ring-pocariBlue w-3.5 h-3.5 cursor-pointer"
+                    className="rounded text-pocariBlue focus:ring-pocariBlue w-4 h-4 cursor-pointer"
                   />
                 </div>
-                <p className="text-xs font-bold text-slate-700 mt-1">{day.title}</p>
-                <p className={`text-[10px] ${day.color} font-medium mt-0.5`}>{day.target}</p>
+                <p className="text-xs font-bold text-slate-800">{day.title}</p>
+                <p className={`text-[11px] font-semibold mt-0.5 ${day.accent.split(" ")[1]}`}>
+                  {day.target}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-snug line-clamp-2">
+                  {day.detail}
+                </p>
               </div>
+              <span className="text-[10px] text-slate-400 group-hover:text-pocariBlue font-medium mt-2 inline-block">
+                ดูวิธีซ้อมละเอียด ➔
+              </span>
             </div>
           );
         })}
+      </div>
+
+      {/* Rest Days Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-500 pt-2 border-t border-slate-200/60">
+        <div className="bg-slate-50/80 px-3 py-1.5 rounded-lg border border-slate-200/50">
+          <span className="font-bold text-slate-700">จันทร์:</span> {week.monRest}
+        </div>
+        <div className="bg-slate-50/80 px-3 py-1.5 rounded-lg border border-slate-200/50">
+          <span className="font-bold text-slate-700">ศุกร์:</span> {week.friRest}
+        </div>
       </div>
     </div>
   );

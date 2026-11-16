@@ -57,7 +57,7 @@ function ExerciseCard({ title, detail, svgContent, videoId, bgClass = "bg-purple
   );
 }
 
-export function GuideModal({ type, weekNum, onClose, weeklyData }) {
+export function GuideModal({ type, weekNum, planId, onClose, weeklyData }) {
   if (!type) return null;
 
   let labelTxt = "";
@@ -66,8 +66,30 @@ export function GuideModal({ type, weekNum, onClose, weeklyData }) {
 
   const wObj = weeklyData.find(d => d.week === weekNum);
   const isPhase0 = wObj?.phase === 'recovery';
+  const isPst34 = planId === 'pst34-2026';
 
-  if (type === 'easy') {
+  if (isPst34 && wObj) {
+    const mapInfo = {
+      easy: { lbl: "อังคาร • Easy Road", ttl: "Easy Road Zone 2 (136–150 bpm)", det: wObj.tueDetail },
+      str: { lbl: "พุธ • Lower & Upper Strength", ttl: "เวทเข่าเฟิร์ม + ช่วงบนรับเป้น้ำ", det: wObj.wedDetail },
+      inc: { lbl: "พฤหัสบดี • Treadmill Incline 12%", ttl: "ซ้อมปีนเขาจำลองบนลู่วิ่ง", det: wObj.thuDetail },
+      long: { lbl: "เสาร์ • Long Run / Race Day", ttl: wObj.satTarget, det: wObj.satDetail },
+      rec: { lbl: "อาทิตย์ • Active Recovery", ttl: "จ๊อกเบา / ยืดเหยียด & Core", det: wObj.sunDetail },
+    };
+    const info = mapInfo[type] || mapInfo.easy;
+    labelTxt = info.lbl;
+    titleTxt = info.ttl;
+    bodyHTML = (
+      <div className="space-y-3 text-xs">
+        <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
+          <b>📋 รายละเอียดเซสชั่น (Week {weekNum}):</b><br />{info.det}
+        </p>
+        <p className="text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200">
+          <b>🥤 โภชนาการสนาม:</b> {wObj.nutritionNote}
+        </p>
+      </div>
+    );
+  } else if (type === 'easy') {
     labelTxt = "อังคาร • Chill Z2 Cardio";
     titleTxt = "Chill Z2 Easy Run (Zero Pace Pressure)";
     bodyHTML = (
