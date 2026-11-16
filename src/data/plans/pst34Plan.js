@@ -4,28 +4,28 @@ const rawWeeks = [
   { week: 1, phase: "base", minutes: 60, focus: "เริ่มปรับตัวสัปดาห์แรก คุมสมาธิวิ่งถนนสลับเดินราบ จิบน้ำสม่ำเสมอ" },
   { week: 2, phase: "base", minutes: 75, focus: "สูตรวิ่งถนนโซน 2 นาน 9 นาทีสลับเดินเร็ว 1 นาที เพื่อถนอมระบบข้อต่อ" },
   { week: 3, phase: "base", minutes: 90, focus: "ซ้อมยาวแตะ 1.5 ชม. พกขนมชิ้นเล็กเคี้ยวระหว่างเคลื่อนที่ฝึกระบบย่อยส่วนท้อง" },
-  { week: 4, phase: "base", minutes: 60, focus: "🌿 สัปดาห์ผ่อนฟื้นฟู (Easy Week) รีเซ็ตร่างกายขจัดกรดแลคติกสะสม", isEasy: true },
+  { week: 4, phase: "base", minutes: 60, focus: "สัปดาห์ผ่อนฟื้นฟู (Easy Week) รีเซ็ตร่างกายขจัดกรดแลคติกสะสม", isEasy: true },
   { week: 5, phase: "endurance", minutes: 105, focus: "เฟสขยายปอด เริ่มลองสะพายเป้น้ำเปล่าวิ่งถนนช่วงเย็นสร้างความเคยชินบ่า" },
   { week: 6, phase: "endurance", minutes: 120, focus: "แตะหลัก 2 ชั่วโมงเต็ม ฝึกจิบน้ำผสมเกลือแร่ทุก ๆ 20 นาทีคุมหัวใจต่ำ" },
   { week: 7, phase: "endurance", minutes: 135, focus: "ยาวขึ้นระดับ 2 ชม. 15 นาที ทานเจลซองแรกนาทีที่ 45 และซองที่สองนาทีที่ 90" },
-  { week: 8, phase: "endurance", minutes: 70, focus: "🌿 สัปดาห์ผ่อนฟื้นฟูครึ่งทางเฟสสอง ยืดเหยียดและนอนพักให้เต็มที่", isEasy: true },
+  { week: 8, phase: "endurance", minutes: 70, focus: "สัปดาห์ผ่อนฟื้นฟูครึ่งทางเฟสสอง ยืดเหยียดและนอนพักให้เต็มที่", isEasy: true },
   { week: 9, phase: "endurance", minutes: 150, focus: "ก้าวข้ามสู่ 2.5 ชั่วโมง ฝึกเดินเร็วตัวเปล่าสลับสปีดช่วงท้ายกิโลเมตรราบ" },
   { week: 10, phase: "endurance", minutes: 165, focus: "ดึงความจำกล้ามเนื้อระยะ 21K ของปีที่แล้วกลับมาใช้ คุมโซนให้เนียนนิ่ง" },
-  { week: 11, phase: "endurance", minutes: 180, focus: "🔥 พีคเฟสสอง ซ้อมยาว 3 ชั่วโมงเต็ม บนถนนลากขาระดับล้าต่ำประคองตัว" },
-  { week: 12, phase: "endurance", minutes: 80, focus: "🌿 สัปดาห์ผ่อนฟื้นฟูใหญ่ เตรียมกล้ามเนื้อข้อต่อก่อนเข้าเฟสพีคขุนช่างเคี่ยน", isEasy: true },
+  { week: 11, phase: "endurance", minutes: 180, focus: "พีคเฟสสอง ซ้อมยาว 3 ชั่วโมงเต็ม บนถนนลากขาระดับล้าต่ำประคองตัว" },
+  { week: 12, phase: "endurance", minutes: 80, focus: "สัปดาห์ผ่อนฟื้นฟูใหญ่ เตรียมกล้ามเนื้อข้อต่อก่อนเข้าเฟสพีคขุนช่างเคี่ยน", isEasy: true },
   { week: 13, phase: "peak", minutes: 200, focus: "เฟสรับมือเขาเชียงใหม่ของจริง ซ้อมขยับขาต่อเนื่องยาวทะลุขอบเขต 3 ชั่วโมง" },
   { week: 14, phase: "peak", minutes: 220, focus: "ซ้อมยาว 3 ชั่วโมง 40 นาที ฝึกพกเจล 3 ซอง เติมสารอาหารอย่างเป็นระบบ" },
   { week: 15, phase: "peak", minutes: 240, focus: "แตะขอบเขต 4 ชั่วโมงเต็มหนแรกบนถนน คุมสมาธิยามค่ำคืนเมื่อขาเริ่มล้าหนัก" },
-  { week: 16, phase: "peak", minutes: 90, focus: "🌿 สัปดาห์ผ่อนฟื้นฟูสั้น ตัดความเหนื่อยล้าสะสมออกไปก่อนชนยอดพีคสูงสุด", isEasy: true },
+  { week: 16, phase: "peak", minutes: 90, focus: "สัปดาห์ผ่อนฟื้นฟูสั้น ตัดความเหนื่อยล้าสะสมออกไปก่อนชนยอดพีคสูงสุด", isEasy: true },
   { week: 17, phase: "peak", minutes: 255, focus: "ซ้อมยาว 4 ชั่วโมง 15 นาที จำลองระบบอาหารกระเพาะให้ย่อยแป้งได้นิ่ง" },
-  { week: 18, phase: "peak", minutes: 280, focus: "👑 วันจำลองสัปดาห์พีคสุดขีด (4 ชั่วโมง 40 นาที) ยาวที่สุดเพื่อต้านทานระยะ 34k เชียงใหม่", isPeak: true },
+  { week: 18, phase: "peak", minutes: 280, focus: "วันจำลองสัปดาห์พีคสุดขีด (4 ชั่วโมง 40 นาที) ยาวที่สุดเพื่อต้านทานระยะ 34k เชียงใหม่", isPeak: true },
   { week: 19, phase: "peak", minutes: 180, focus: "ถอยระดับเวลาลงมาหลังผ่านศึกพีคใหญ่ ร่างกายคุณจะฟิตเต็มพิกัดแล้ว" },
-  { week: 20, phase: "peak", minutes: 90, focus: "🌿 สัปดาห์ผ่อนเพื่อเคลียร์โครงสร้างร่างกายทั้งหมด ก่อนเข้าสู่ช่วง Taper", isEasy: true },
+  { week: 20, phase: "peak", minutes: 90, focus: "สัปดาห์ผ่อนเพื่อเคลียร์โครงสร้างร่างกายทั้งหมด ก่อนเข้าสู่ช่วง Taper", isEasy: true },
   { week: 21, phase: "taper", minutes: 130, focus: "เข้าเฟสถอนระยะ ลดเวลาลงเหลือ 2 ชม. สิบนาที คงความเข้มข้นแต่ถนอมใยกล้ามเนื้อ" },
   { week: 22, phase: "taper", minutes: 100, focus: "ลดระยะต่อเนื่อง ร่างกายจะรู้สึกดีดและมีพลังเหลือเฟือ คุมใจห้ามวิ่งเร็วเกินไป" },
   { week: 23, phase: "taper", minutes: 75, focus: "จ๊อกราบสบาย ๆ ตรวจเช็กแพลนการเดินทางและเช็กอุปกรณ์ไฟฉายเป้น้ำ" },
   { week: 24, phase: "taper", minutes: 45, focus: "สัปดาห์หน้างาน ยืดเหยียดขยับขาเบา ๆ กินแป้งตุนสารอาหาร (Carbo-load)" },
-  { week: 25, phase: "taper", minutes: 360, focus: "🏁 วันวิ่งจริงสนามเชียงใหม่ PST34 (34 km, D+ 1,200m) — จบภารกิจจริง 31.94 km | 06:00:27 Chip | D+ 1,115m!", isRace: true },
+  { week: 25, phase: "taper", minutes: 360, focus: "วันวิ่งจริงสนามเชียงใหม่ PST34 (34 km, D+ 1,200m) — จบภารกิจจริง 31.94 km | 06:00:27 Chip | D+ 1,115m!", isRace: true },
 ];
 
 const phaseLabels = {
@@ -39,18 +39,18 @@ export const pst34Plan = {
   id: "pst34-2026",
   shortName: "PST34 Trail",
   title: "PST34 Chiang Mai — Gym & Road Edition",
-  subtitle: "แผนซ้อม 25 สัปดาห์พิชิต Pocari Sweat Trail 34K (D+ 1,200m) — จบภารกิจสำเร็จเมื่อ 14 พ.ย. 2569 🏆",
+  subtitle: "แผนซ้อม 25 สัปดาห์พิชิต Pocari Sweat Trail 34K (D+ 1,200m) — จบภารกิจสำเร็จเมื่อ 14 พ.ย. 2569 ",
   badge: "Completed • 31.94 km | 06:00:27",
   status: "completed",
-  statusLabel: "🏆 จบภารกิจแล้ว",
+  statusLabel: "จบภารกิจแล้ว",
   periodLabel: "25 พ.ค. – 14 พ.ย. 2569",
   startDateStr: "2026-05-25",
   storageKey: "pst34_treadmill_state",
   theme: {
-    heroGradient: "from-mountainDark to-pocariBlue",
-    accentBadge: "bg-amber-500 text-white",
-    navBg: "bg-pocariBlue",
-    ringColor: "text-treadmillGreen",
+    heroGradient: "from-zinc-950 via-zinc-900 to-[#1d4ed8]",
+    accentBadge: "bg-zinc-800 text-zinc-100",
+    navBg: "bg-zinc-950",
+    ringColor: "text-blue-400",
   },
   metrics: [
     {
@@ -92,9 +92,9 @@ export const pst34Plan = {
       ...w,
       phaseLabel: phaseLabels[w.phase],
       title: w.isRace
-        ? "🏁 วันลุยศึกเชียงใหม่ PST30/34 (Finisher 06:00:27!)"
+        ? "วันลุยศึกเชียงใหม่ PST30/34 (Finisher 06:00:27!)"
         : w.isEasy
-          ? `🌿 สัปดาห์ผ่อนฟื้นคืนสภาพ (W${w.week})`
+          ? `สัปดาห์ผ่อนฟื้นคืนสภาพ (W${w.week})`
           : w.isPeak
             ? `⭐ สัปดาห์ระยะทางสูงสุด (Peak Volume W${w.week})`
             : `แผนสะสมพลังงานสัปดาห์ที่ ${w.week}`,
@@ -108,8 +108,8 @@ export const pst34Plan = {
       satDetail: w.isRace ? "PST30/34 เชียงใหม่ — ผ่านครบทุกจุดภายใน 6 ชม.!" : `ซ้อมวิ่งยาว Zone 2 (${w.minutes} นาที) ฝึกกินเจลทุก 45 นาที`,
       sunTarget: "จ๊อก/เวท - 45 น.",
       sunDetail: "Active Recovery จ๊อกเบา 25–30 น. + ยืดเหยียด & Core",
-      monRest: "🛌 วันพักผ่อน (Rest Day)",
-      friRest: "🛌 วันพักผ่อนก่อน Long Run วันเสาร์",
+      monRest: "วันพักผ่อน (Rest Day)",
+      friRest: "วันพักผ่อนก่อน Long Run วันเสาร์",
       weeklyCardioMin: 120 + w.minutes,
       nutritionNote: "เจล 1 ซองทุก 45 นาที | จิบน้ำ/เกลือแร่ทุก 20 นาที",
     };
@@ -117,7 +117,7 @@ export const pst34Plan = {
   playbook: {
     overviewCards: [
       {
-        title: "🏁 สรุปผลประกอบการสนามจริง PST30 (14 พ.ย. 2569)",
+        title: "สรุปผลประกอบการสนามจริง PST30 (14 พ.ย. 2569)",
         items: [
           "ระยะทาง GPS: 31.94 km | ความชันสะสม D+ 1,115 m / D- 1,109 m",
           "เวลาเข้าเส้นชัย: 06:00:33 (Chip Time 06:00:27) — ปลอดภัยก่อน Cut-off 10 ชม. เกือบ 4 ชม.!",
@@ -125,9 +125,9 @@ export const pst34Plan = {
         ],
       },
       {
-        title: "⛰️ สูตรลู่วิ่งไฟฟ้า 12% & ยุทธศาสตร์ 3 ยอดเขา",
+        title: "สูตรลู่วิ่งไฟฟ้า 12% & ยุทธศาสตร์ 3 ยอดเขา",
         items: [
-          "พฤหัสบดี Incline: วอร์ม 10 น. (0%) ➔ ปีนเขาจำลอง 40 น. (10–12%, 4.5–5.5 km/h) ➔ คูลดาวน์ 10 น.",
+          "พฤหัสบดี Incline: วอร์ม 10 น. (0%) ปีนเขาจำลอง 40 น. (10–12%, 4.5–5.5 km/h) คูลดาวน์ 10 น.",
           "ยอดที่ 1 (กม. 2–5): เดินก้าวสั้นตามจังหวะบนลู่ ห้ามเร่งจนหน้าขาไหม้",
           "ยอดที่ 2 (กม. 12–20): ขุนช่างเคี่ยน/แม่ใน — เติมเจลทุก 45 นาที ป้องกัน Bonk",
           "ยอดที่ 3 (กม. 28–31): ดิ่งเข้า CMECC — ใช้ความแข็งแกร่งจาก Eccentric Squat ประคองเข่า",

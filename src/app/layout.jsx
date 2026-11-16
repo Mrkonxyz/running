@@ -2,19 +2,25 @@ import Script from "next/script";
 import "../index.css";
 
 export const metadata = {
-  title: "⚡ Korn Training Hub — Hybrid Physique, PST34 & Annual Tracker",
+  title: "Training Hub — Hybrid Physique, PST34 & Annual Tracker",
   description:
-    "แดชบอร์ดติดตามแผนซ้อม Hybrid Physique (1 Activity/Day) ปั้น V-Taper รีดไขมันสู่ 18.0% BF พร้อมวิ่งชิล Zone 2 และเดินชัน 8–12% เชื่อมต่อ MongoDB",
+    "แดชบอร์ดติดตามตารางซ้อม Hybrid Physique, วิ่ง Zone 2, เดินชัน และคู่มือท่าออกกำลังกาย พร้อมซิงค์ความคืบหน้าข้ามอุปกรณ์",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const FOUC_SCRIPT = `
 try {
   const s = localStorage.getItem("color-scheme");
-  if (s === "light" || s === "dark") {
+  if (s ==="light" || s ==="dark") {
     const m = document.querySelector('meta[name="color-scheme"]');
     if (m) m.content = s;
   }
-  const isDark = s === "dark" || (!s && matchMedia("(prefers-color-scheme: dark)").matches);
+  const isDark = s ==="dark" || (!s && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", isDark);
 } catch {}
 `;

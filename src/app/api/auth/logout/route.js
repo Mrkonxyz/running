@@ -35,7 +35,7 @@ export async function POST() {
 
     const response = NextResponse.json({ ok: true });
     clearAuthCookies(response);
-    response.headers.set("Clear-Site-Data", '"cookies", "storage", "cache"');
+    response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (err) {
     console.error("Logout error:", err);

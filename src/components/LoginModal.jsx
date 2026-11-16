@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { AlertIcon, CloseIcon } from "./Icons.jsx";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
+export function LoginModal({ isOpen, onClose, onLoginSuccess, inline = false }) {
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -12,12 +13,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || inline) return;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow ="hidden";
     const timer = setTimeout(() => inputRef.current?.focus(), 40);
     const onKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key ==="Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
@@ -25,14 +26,14 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, inline, onClose]);
 
   if (!isOpen) return null;
 
   const validateValue = (val) => {
     const trimmed = val.trim();
-    if (!trimmed) return "กรุณากรอกอีเมลสำหรับเข้าสู่ระบบ";
-    if (!EMAIL_RE.test(trimmed)) return "รูปแบบอีเมลไม่ถูกต้อง (เช่น saranuykon@gmail.com)";
+    if (!trimmed) return "กรุณากรอกอีเมลของคุณ";
+    if (!EMAIL_RE.test(trimmed)) return "รูปแบบอีเมลไม่ถูกต้อง (เช่น name@example.com)";
     return "";
   };
 
@@ -65,7 +66,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json" },
         body: JSON.stringify({ email: targetEmail.trim().toLowerCase() }),
       });
       const data = await res.json();
@@ -87,111 +88,108 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     submitEmail(email);
   };
 
+  const cardContent = (
+    <div
+      className={
+        inline
+          ? "bg-white dark:bg-zinc-900 rounded-xl max-w-md w-full p-6 shadow-xs border border-zinc-200 dark:border-zinc-800"
+          : "bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl max-w-md w-full p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg border border-zinc-200 dark:border-zinc-800 max-h-[90dvh] overflow-y-auto"
+      }
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex justify-between items-start mb-5">
+        <div>
+          <span className="text-[11px] font-medium text-[#1d4ed8] dark:text-blue-400 bg-[#1d4ed8]/10 dark:bg-blue-500/15 px-2.5 py-0.5 rounded-md border border-[#1d4ed8]/20 dark:border-blue-500/30">
+            เริ่มต้นใช้งาน
+          </span>
+          <h2 id="login-modal-heading" className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50 mt-2.5">
+            เข้าสู่ระบบด้วยอีเมล
+          </h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+            กรอกอีเมลของคุณเพื่อเข้าใช้งานและซิงค์ความคืบหน้าการซ้อมข้ามอุปกรณ์ได้ทันที
+          </p>
+        </div>
+        {!inline && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="ปิดหน้าต่างเข้าสู่ระบบ"
+            className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      <form action="/api/auth/login" method="POST" onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div>
+          <label
+            htmlFor="login-email"
+            className="block text-xs font-medium text-zinc-900 dark:text-zinc-100 mb-1.5"
+          >
+            อีเมลของคุณ <span aria-hidden="true" className="text-red-500">*</span>
+          </label>
+          <input
+            ref={inputRef}
+            id="login-email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            enterKeyHint="done"
+            required
+            value={email}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            aria-invalid={errorMsg ? "true" : "false"}
+            aria-describedby="login-email-help login-email-error"
+            placeholder="name@example.com"
+            className={`w-full h-11 px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50 placeholder:text-zinc-400 border transition focus:outline-none focus:ring-2 ${
+              errorMsg
+                ? "border-red-500 focus:ring-red-500/30"
+                : "border-zinc-200 dark:border-zinc-800 focus:ring-[#1d4ed8]/30 focus:border-[#1d4ed8]"
+            }`}
+          />
+          <span id="login-email-help" className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5 block">
+            เข้าสู่ระบบได้ทันทีโดยไม่ต้องใช้รหัสผ่าน
+          </span>
+          {errorMsg && (
+            <p
+              id="login-email-error"
+              role="status"
+              aria-live="polite"
+              className="text-xs font-medium text-red-600 dark:text-red-400 mt-1.5 flex items-center gap-1"
+            >
+              <AlertIcon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{errorMsg}</span>
+            </p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full h-11 px-4 rounded-lg bg-[#1d4ed8] hover:bg-[#1e40af] disabled:opacity-60 text-white text-sm font-medium shadow-xs transition active:scale-[0.99] cursor-pointer"
+        >
+          {submitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+        </button>
+      </form>
+    </div>
+  );
+
+  if (inline) return cardContent;
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="login-modal-heading"
-      className="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
-      <div
-        className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-pocariBlue dark:text-sky-400 bg-blue-50 dark:bg-sky-950 px-2.5 py-0.5 rounded-full">
-              MongoDB Session Auth
-            </span>
-            <h2 id="login-modal-heading" className="text-xl font-bold text-slate-900 dark:text-white mt-2">
-              เข้าสู่ระบบด้วยอีเมล
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-              ไม่ต้องใช้รหัสผ่าน — สร้าง Session + Refresh Token เก็บในฐานข้อมูล{" "}
-              <code className="font-mono text-pocariBlue dark:text-sky-400">running</code> เพื่อซิงค์ประวัติการซ้อมอัตโนมัติ
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="ปิดหน้าต่างเข้าสู่ระบบ"
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold text-2xl leading-none px-2 cursor-pointer"
-          >
-            &times;
-          </button>
-        </div>
-
-        <form action="/api/auth/login" method="POST" onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div>
-            <label
-              htmlFor="login-email"
-              className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5"
-            >
-              อีเมล (Username) <span aria-hidden="true" className="text-rose-500">*</span>
-            </label>
-            <input
-              ref={inputRef}
-              id="login-email"
-              name="email"
-              type="email"
-              autoComplete="username"
-              spellCheck={false}
-              autoCapitalize="none"
-              autoCorrect="off"
-              enterKeyHint="done"
-              required
-              value={email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              aria-invalid={errorMsg ? "true" : "false"}
-              aria-describedby="login-email-help login-email-error"
-              placeholder="you@example.com"
-              className={`w-full min-h-[48px] px-3.5 py-2.5 rounded-xl text-base bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border transition focus:outline-none focus:ring-2 ${
-                errorMsg
-                  ? "border-rose-500 focus:ring-rose-500/40"
-                  : "border-slate-300 dark:border-slate-700 focus:ring-pocariBlue/50 focus:border-pocariBlue"
-              }`}
-            />
-            <span id="login-email-help" className="text-[11px] text-slate-400 mt-1.5 block">
-              ระบบจะสร้าง Access Token (15 นาที) + HttpOnly Refresh Token (30 วัน) ให้อัตโนมัติ
-            </span>
-            {errorMsg && (
-              <p
-                id="login-email-error"
-                role="status"
-                aria-live="polite"
-                className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1"
-              >
-                <span aria-hidden="true">⚠️</span>
-                <span>{errorMsg}</span>
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] text-slate-400">ด่วน:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("saranuykon@gmail.com");
-                setErrorMsg("");
-              }}
-              className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-sky-950/60 hover:text-pocariBlue dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-            >
-              ใช้ saranuykon@gmail.com
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-pocariBlue hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold shadow-sm transition cursor-pointer"
-          >
-            {submitting ? "กำลังสร้าง Session..." : "Sign In ด้วยอีเมล"}
-          </button>
-        </form>
-      </div>
+      {cardContent}
     </div>
   );
 }

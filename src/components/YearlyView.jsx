@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { YEARLY_DATA } from "../data/plans";
+import { CalendarIcon, FlagIcon } from "./Icons.jsx";
 
 export function YearlyView({ onJumpToPlan }) {
   const [selectedYear, setSelectedYear] = useState(2026);
@@ -11,11 +12,11 @@ export function YearlyView({ onJumpToPlan }) {
   const statusStyles = {
     pre: "bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300",
     pst34:
-      "bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/70 text-slate-800 dark:text-slate-100 hover:border-pocariBlue dark:hover:border-sky-400",
+"bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/70 text-slate-800 dark:text-slate-100 hover:border-pocariBlue dark:hover:border-sky-400",
     hybrid:
-      "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/70 text-slate-800 dark:text-slate-100 hover:border-treadmillGreen dark:hover:border-emerald-400",
+"bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/70 text-slate-800 dark:text-slate-100 hover:border-treadmillGreen dark:hover:border-emerald-400",
     lifestyle:
-      "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/70 text-slate-800 dark:text-slate-100 hover:border-indigo-500 dark:hover:border-indigo-400",
+"bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/70 text-slate-800 dark:text-slate-100 hover:border-indigo-500 dark:hover:border-indigo-400",
   };
 
   const tagColors = {
@@ -23,8 +24,8 @@ export function YearlyView({ onJumpToPlan }) {
     Peak: "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300",
     Race: "bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300",
     Gate: "bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300",
-    "Phase 1": "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300",
-    "Phase 2": "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300",
+"Phase 1": "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300",
+"Phase 2": "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300",
     Reset: "bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300",
     Checkpoint: "bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300",
     Target: "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300",
@@ -39,8 +40,9 @@ export function YearlyView({ onJumpToPlan }) {
           <span className="text-[11px] font-bold uppercase tracking-wider text-pocariBlue dark:text-sky-400 bg-blue-50 dark:bg-sky-950 px-2.5 py-0.5 rounded-full">
             Annual Training Roadmap
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white mt-1.5">
-            📆 ภาพรวมรายปี {yearData.yearBE} ({yearData.yearCE})
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white mt-1.5 flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-pocariBlue dark:text-sky-400" />
+            <span>ภาพรวมรายปี {yearData.yearBE} ({yearData.yearCE})</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">{yearData.headline}</p>
         </div>
@@ -77,7 +79,7 @@ export function YearlyView({ onJumpToPlan }) {
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h3 className="text-base font-bold text-slate-800 dark:text-white">
-            🗓️ ไทม์ไลน์ 12 เดือน (คลิกที่เดือนเพื่อเปิดแผนซ้อม)
+            ไทม์ไลน์ 12 เดือน (คลิกที่เดือนเพื่อเปิดแผนซ้อม)
           </h3>
           <div className="flex flex-wrap gap-3 text-[11px] text-slate-600 dark:text-slate-300">
             <span className="flex items-center gap-1.5">
@@ -117,11 +119,11 @@ export function YearlyView({ onJumpToPlan }) {
                 <div className="w-full h-1.5 bg-white/80 dark:bg-slate-950/60 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${
-                      m.status === "pst34"
+                      m.status ==="pst34"
                         ? "bg-pocariBlue"
-                        : m.status === "hybrid"
+                        : m.status ==="hybrid"
                           ? "bg-treadmillGreen"
-                          : m.status === "lifestyle"
+                          : m.status ==="lifestyle"
                             ? "bg-indigo-500"
                             : "bg-slate-400"
                     }`}
@@ -130,7 +132,7 @@ export function YearlyView({ onJumpToPlan }) {
                 </div>
                 {m.planId && (
                   <span className="text-[10px] font-semibold text-pocariBlue dark:text-sky-400 mt-1.5 inline-block">
-                    เปิดสัปดาห์ที่ {m.week} ➔
+                    เปิดสัปดาห์ที่ {m.week} →
                   </span>
                 )}
               </div>
@@ -141,8 +143,9 @@ export function YearlyView({ onJumpToPlan }) {
 
       {/* Key Milestones */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-4">
-          🚩 หมุดหมายสำคัญประจำปี {yearData.yearBE}
+        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <FlagIcon className="w-4 h-4 text-pocariBlue dark:text-sky-400" />
+          <span>หมุดหมายสำคัญประจำปี {yearData.yearBE}</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {yearData.milestones.map((ms, i) => (
