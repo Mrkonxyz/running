@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { getPlanById } from "../data/plans";
-import { resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
-import { BuildingIcon, CloseIcon, HomeIcon, SearchIcon } from "./Icons.jsx";
+import { getPrimaryExerciseDisplay, resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
+import { CloseIcon, SearchIcon } from "./Icons.jsx";
 
 function ExerciseGifThumb({ src, alt, onClick, sizeClass ="w-16 h-16" }) {
   return (
@@ -37,7 +37,6 @@ function StrengthCardGrid({
   extraPill,
   rows,
   codeColorClass,
-  equipMode,
   onSelectExercise,
 }) {
   return (
@@ -60,105 +59,72 @@ function StrengthCardGrid({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {rows.map((row) => (
-          <div
-            key={row.code}
-            className="rounded-2xl p-4 bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-3"
-          >
-            {/* Card Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 ${codeColorClass}`}>
-                    {row.code}
-                  </span>
-                  <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">{row.muscle}</h4>
+        {rows.map((row, idx) => {
+          const { option, exerciseName, gif } = getPrimaryExerciseDisplay(row);
+
+          return (
+            <div
+              key={row.code || idx}
+              className="rounded-2xl p-4 bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-3"
+            >
+              {/* Card Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 ${codeColorClass}`}>
+                      {row.code}
+                    </span>
+                    <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">{row.muscle}</h4>
+                  </div>
+                  {row.targetMuscle && (
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block mt-0.5">
+                      {row.targetMuscle}
+                    </span>
+                  )}
                 </div>
-                {row.targetMuscle && (
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block mt-0.5">
-                    {row.targetMuscle}
-                  </span>
-                )}
+
+                <div className="text-right flex-shrink-0 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">{row.sets}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{row.rir}</span>
+                </div>
               </div>
 
-              <div className="text-right flex-shrink-0 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">{row.sets}</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{row.rir}</span>
-              </div>
-            </div>
-
-            {/* Home & Gym Large Thumbnails */}
-            <div className={`grid gap-3 ${equipMode ==="all" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
-              {equipMode !=="gym" && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3">
-                  {row.homeGif && (
+              {/* Unified Single Exercise Box */}
+              {(gif || option) && (
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3.5">
+                  {gif && (
                     <ExerciseGifThumb
                       sizeClass="w-20 h-20 sm:w-24 sm:h-24"
-                      src={row.homeGif}
-                      alt={row.homeExerciseName || row.home}
-                      onClick={() => onSelectExercise({ row, focus: "home" })}
+                      src={gif}
+                      alt={exerciseName || option || row.muscle}
+                      onClick={() => onSelectExercise({ row })}
                     />
                   )}
                   <div className="min-w-0">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pocariBlue dark:text-sky-400">
-                      <HomeIcon className="w-3 h-3" />
-                      <span>Home Dumbbell</span>
-                    </span>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug mt-0.5">
-                      {row.home}
+                    <p className="text-xs sm:text-[13px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">
+                      {option}
                     </p>
-                    {row.homeExerciseName && (
+                    {exerciseName && (
                       <button
                         type="button"
-                        onClick={() => onSelectExercise({ row, focus: "home" })}
-                        className="text-[10px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline mt-1 inline-block cursor-pointer text-left"
+                        onClick={() => onSelectExercise({ row })}
+                        className="text-[11px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline mt-1 inline-block cursor-pointer text-left"
                       >
-                        Demo: {row.homeExerciseName}
+                        Demo: {exerciseName}
                       </button>
                     )}
                   </div>
                 </div>
               )}
 
-              {equipMode !=="home" && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3">
-                  {row.gymGif && (
-                    <ExerciseGifThumb
-                      sizeClass="w-20 h-20 sm:w-24 sm:h-24"
-                      src={row.gymGif}
-                      alt={row.gymExerciseName || row.gym}
-                      onClick={() => onSelectExercise({ row, focus: "gym" })}
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                      <BuildingIcon className="w-3 h-3" />
-                      <span>Commercial Gym</span>
-                    </span>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug mt-0.5">
-                      {row.gym}
-                    </p>
-                    {row.gymExerciseName && (
-                      <button
-                        type="button"
-                        onClick={() => onSelectExercise({ row, focus: "gym" })}
-                        className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block cursor-pointer text-left"
-                      >
-                        Demo: {row.gymExerciseName}
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {row.tips && (
+                <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 rounded-lg px-3 py-2 leading-relaxed">
+                  <b className="text-emerald-800 dark:text-emerald-300">Technique Cue:</b> {row.tips}
+                </p>
               )}
             </div>
-
-            {row.tips && (
-              <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 rounded-lg px-3 py-2 leading-relaxed">
-                <b className="text-emerald-800 dark:text-emerald-300">Technique Cue:</b> {row.tips}
-              </p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -172,7 +138,6 @@ function StrengthTable({
   extraPill,
   rows,
   codeColorClass,
-  equipMode,
   onSelectExercise,
 }) {
   return (
@@ -200,90 +165,65 @@ function StrengthTable({
             <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/70">
               <th className="py-2.5 px-3 font-bold">รหัส</th>
               <th className="py-2.5 px-3 font-bold">กลุ่มกล้ามเนื้อ</th>
-              {equipMode !=="gym" && <th className="py-2.5 px-3 font-bold">Home Dumbbell (+GIF)</th>}
-              {equipMode !=="home" && <th className="py-2.5 px-3 font-bold">Commercial Gym (+GIF)</th>}
+              <th className="py-2.5 px-3 font-bold">ท่าฝึก (+GIF)</th>
               <th className="py-2.5 px-3 font-bold">เซต × ครั้ง</th>
-              <th className="py-2.5 px-3 font-bold">Tempo & RIR</th>
+              <th className="py-2.5 px-3 font-bold">Tempo &amp; RIR</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {rows.map((row) => (
-              <tr key={row.code} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 align-top">
-                <td className={`py-3 px-3 font-bold ${codeColorClass}`}>{row.code}</td>
-                <td className="py-3 px-3">
-                  <span className="font-semibold text-slate-800 dark:text-white block">{row.muscle}</span>
-                  {row.targetMuscle && (
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wide">{row.targetMuscle}</span>
-                  )}
-                </td>
+            {rows.map((row, idx) => {
+              const { option, exerciseName, gif } = getPrimaryExerciseDisplay(row);
 
-                {equipMode !=="gym" && (
-                  <td className="py-3 px-3 min-w-[230px]">
+              return (
+                <tr key={row.code || idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 align-top">
+                  <td className={`py-3 px-3 font-bold ${codeColorClass}`}>{row.code}</td>
+                  <td className="py-3 px-3">
+                    <span className="font-semibold text-slate-800 dark:text-white block">{row.muscle}</span>
+                    {row.targetMuscle && (
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wide">{row.targetMuscle}</span>
+                    )}
+                  </td>
+
+                  <td className="py-3 px-3 min-w-[260px]">
                     <div className="flex items-start gap-2.5">
-                      {row.homeGif && (
+                      {gif && (
                         <ExerciseGifThumb
-                          src={row.homeGif}
-                          alt={row.homeExerciseName || row.home}
-                          onClick={() => onSelectExercise({ row, focus: "home" })}
+                          src={gif}
+                          alt={exerciseName || option || row.muscle}
+                          onClick={() => onSelectExercise({ row })}
                         />
                       )}
                       <div>
-                        <p className="font-medium text-slate-700 dark:text-slate-200 leading-snug">{row.home}</p>
-                        {row.homeExerciseName && (
+                        <p className="font-medium text-slate-700 dark:text-slate-200 leading-snug">{option}</p>
+                        {exerciseName && (
                           <button
                             type="button"
-                            onClick={() => onSelectExercise({ row, focus: "home" })}
+                            onClick={() => onSelectExercise({ row })}
                             className="text-[10px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline mt-1 inline-block cursor-pointer"
                           >
-                            Demo: {row.homeExerciseName}
+                            Demo: {exerciseName}
                           </button>
                         )}
                       </div>
                     </div>
                   </td>
-                )}
 
-                {equipMode !=="home" && (
-                  <td className="py-3 px-3 min-w-[230px]">
-                    <div className="flex items-start gap-2.5">
-                      {row.gymGif && (
-                        <ExerciseGifThumb
-                          src={row.gymGif}
-                          alt={row.gymExerciseName || row.gym}
-                          onClick={() => onSelectExercise({ row, focus: "gym" })}
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium text-slate-700 dark:text-slate-200 leading-snug">{row.gym}</p>
-                        {row.gymExerciseName && (
-                          <button
-                            type="button"
-                            onClick={() => onSelectExercise({ row, focus: "gym" })}
-                            className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-1 inline-block cursor-pointer"
-                          >
-                            Demo: {row.gymExerciseName}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                  <td className="py-3 px-3 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">{row.sets}</td>
+                  <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
+                    <span className="block">{row.rir}</span>
+                    {row.tips && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectExercise({ row })}
+                        className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-pocariBlue dark:hover:text-sky-400 mt-1 inline-block cursor-pointer"
+                      >
+                        ดูทริค + รูปใหญ่ →
+                      </button>
+                    )}
                   </td>
-                )}
-
-                <td className="py-3 px-3 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">{row.sets}</td>
-                <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
-                  <span className="block">{row.rir}</span>
-                  {row.tips && (
-                    <button
-                      type="button"
-                      onClick={() => onSelectExercise({ row, focus: equipMode ==="gym" ? "gym" : "home" })}
-                      className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-pocariBlue dark:hover:text-sky-400 mt-1 inline-block cursor-pointer"
-                    >
-                      ดูทริค + รูปใหญ่ →
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -308,6 +248,7 @@ function ExerciseLightboxModal({ selection, onClose }) {
 
   if (!selection) return null;
   const { row } = selection;
+  const { option, exerciseName, gif } = getPrimaryExerciseDisplay(row);
 
   return (
     <div
@@ -318,7 +259,7 @@ function ExerciseLightboxModal({ selection, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
@@ -335,7 +276,7 @@ function ExerciseLightboxModal({ selection, onClose }) {
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white mt-1">{row.muscle}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              <b>ปริมาณซ้อม:</b> {row.sets} • <b>จังหวะ & ความหนัก:</b> {row.rir}
+              <b>ปริมาณซ้อม:</b> {row.sets} • <b>จังหวะ &amp; ความหนัก:</b> {row.rir}
             </p>
           </div>
           <button
@@ -348,43 +289,23 @@ function ExerciseLightboxModal({ selection, onClose }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {row.homeGif && (
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-pocariBlue dark:text-sky-300 bg-blue-50 dark:bg-sky-950 px-2.5 py-0.5 rounded-full mb-2">
-                <HomeIcon className="w-3 h-3" />
-                <span>Home Dumbbell</span>
-              </span>
+        {(gif || option) && (
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center mb-4">
+            {gif && (
               <img
-                src={row.homeGif}
-                alt={row.homeExerciseName || row.home}
-                className="w-52 h-52 sm:w-60 sm:h-60 object-contain bg-white rounded-xl border border-slate-200 shadow-xs"
+                src={gif}
+                alt={exerciseName || option || row.muscle}
+                className="w-56 h-56 sm:w-64 sm:h-64 object-contain bg-white rounded-xl border border-slate-200 shadow-xs"
               />
-              <p className="text-xs font-bold text-slate-800 dark:text-white mt-2.5">{row.home}</p>
-              {row.homeExerciseName && (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{row.homeExerciseName}</span>
-              )}
-            </div>
-          )}
-
-          {row.gymGif && (
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-0.5 rounded-full mb-2">
-                <BuildingIcon className="w-3 h-3" />
-                <span>Commercial Gym</span>
-              </span>
-              <img
-                src={row.gymGif}
-                alt={row.gymExerciseName || row.gym}
-                className="w-52 h-52 sm:w-60 sm:h-60 object-contain bg-white rounded-xl border border-slate-200 shadow-xs"
-              />
-              <p className="text-xs font-bold text-slate-800 dark:text-white mt-2.5">{row.gym}</p>
-              {row.gymExerciseName && (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{row.gymExerciseName}</span>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+            {option && (
+              <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white mt-3">{option}</p>
+            )}
+            {exerciseName && (
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{exerciseName}</span>
+            )}
+          </div>
+        )}
 
         {row.tips && (
           <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-xs text-emerald-950 dark:text-emerald-200 mb-4 leading-relaxed">
@@ -416,7 +337,6 @@ function ExerciseLightboxModal({ selection, onClose }) {
 
 export function PlaybookView({ plan, currentWeek = 1 }) {
   const playbook = plan.playbook || getPlanById("hybrid-2026")?.playbook;
-  const [equipMode, setEquipMode] = useState("all"); // 'all' | 'home' | 'gym'
   const [layoutMode, setLayoutMode] = useState("cards"); // 'cards' | 'table'
   const [selectedExercise, setSelectedExercise] = useState(null);
 
@@ -496,61 +416,36 @@ export function PlaybookView({ plan, currentWeek = 1 }) {
         </div>
       )}
 
-      {/* Mode & Layout Filter Toolbar */}
+      {/* Layout Filter Toolbar */}
       {hasStrengthTables && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white block">
               คู่มือท่าฝึกเวทเทรนนิ่งพร้อมภาพสาธิต
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              แตะที่ภาพท่าฝึกเพื่อขยายดูวิธีเล่นแบบ Home Dumbbell เทียบกับ Commercial Gym
+              แตะที่ภาพท่าฝึกเพื่อขยายดูวิธีเล่นและเทคนิคอย่างละเอียด
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Layout Switcher: Card View vs Table View */}
-            <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              {[
-                { id: "cards", label: "การ์ดภาพใหญ่" },
-                { id: "table", label: "ตารางเปรียบเทียบ" },
-              ].map((l) => (
-                <button
-                  key={l.id}
-                  type="button"
-                  onClick={() => setLayoutMode(l.id)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    layoutMode === l.id
-                      ? "bg-white dark:bg-slate-900 text-pocariBlue dark:text-sky-400 shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Equipment Mode */}
-            <div className="flex flex-wrap gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              {[
-                { id: "all", label: "ทั้งหมด" },
-                { id: "home", label: "Home DB" },
-                { id: "gym", label: "Commercial Gym" },
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setEquipMode(m.id)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    equipMode === m.id
-                      ? "bg-white dark:bg-slate-900 text-pocariBlue dark:text-sky-400 shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-auto">
+            {[
+              { id: "cards", label: "การ์ดภาพใหญ่" },
+              { id: "table", label: "ตารางสรุป" },
+            ].map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => setLayoutMode(l.id)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  layoutMode === l.id
+                    ? "bg-white dark:bg-slate-900 text-pocariBlue dark:text-sky-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -570,7 +465,6 @@ export function PlaybookView({ plan, currentWeek = 1 }) {
             extraPill={plan.id ==="pst34-2026" ? null : "ก่อนซ้อม 30–60m: Collagen 15g + Vit C"}
             rows={strengthDayARows}
             codeColorClass="text-purple-700 dark:text-purple-400"
-            equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
           />
         ) : (
@@ -586,7 +480,6 @@ export function PlaybookView({ plan, currentWeek = 1 }) {
             extraPill={plan.id ==="pst34-2026" ? null : "ก่อนซ้อม 30–60m: Collagen 15g + Vit C"}
             rows={strengthDayARows}
             codeColorClass="text-purple-700 dark:text-purple-400"
-            equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
           />
         ))}
@@ -601,7 +494,6 @@ export function PlaybookView({ plan, currentWeek = 1 }) {
             title="Strength Day B: Upper Body V-Taper + Glutes & Core"
             rows={strengthDayBRows}
             codeColorClass="text-indigo-700 dark:text-indigo-400"
-            equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
           />
         ) : (
@@ -612,7 +504,6 @@ export function PlaybookView({ plan, currentWeek = 1 }) {
             title="Strength Day B: Upper Body V-Taper + Glutes & Core"
             rows={strengthDayBRows}
             codeColorClass="text-indigo-700 dark:text-indigo-400"
-            equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
           />
         ))}

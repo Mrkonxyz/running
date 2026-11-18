@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { getPlanById } from "../data/plans";
-import { resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
-import { BuildingIcon, CloseIcon, HomeIcon, SearchIcon } from "./Icons.jsx";
+import { getPrimaryExerciseDisplay, resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
+import { CloseIcon } from "./Icons.jsx";
 
-function DatasetExerciseCard({ row, equipView, onExpand }) {
-  const showHome = equipView === "both" || equipView === "home";
-  const showGym = equipView === "both" || equipView === "gym";
-  const hasHome = Boolean(row.homeGif || row.home);
-  const hasGym = Boolean(row.gymGif || row.gym);
+function DatasetExerciseCard({ row, onExpand }) {
+  const { option, exerciseName, gif } = getPrimaryExerciseDisplay(row);
 
   return (
     <div className="bg-slate-50/80 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
@@ -26,59 +23,31 @@ function DatasetExerciseCard({ row, equipView, onExpand }) {
         </div>
       </div>
 
-      <div className={`grid gap-2 ${showHome && showGym && hasHome && hasGym ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
-        {showHome && hasHome && (
-          <div
-            onClick={() => (row.homeGif || row.gymGif) && onExpand(row)}
-            className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-700 hover:border-pocariBlue dark:hover:border-sky-400 cursor-pointer transition"
-          >
-            {row.homeGif && (
-              <img
-                src={row.homeGif}
-                alt={row.homeExerciseName || row.home}
-                loading="lazy"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
-              />
-            )}
-            <div className="min-w-0">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pocariBlue dark:text-sky-400">
-                <HomeIcon className="w-3 h-3" />
-                <span>Home Dumbbell</span>
+      {(gif || option) && (
+        <div
+          onClick={() => gif && onExpand(row)}
+          className={`flex items-center gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700 transition ${
+            gif ? "hover:border-pocariBlue dark:hover:border-sky-400 cursor-pointer" : ""
+          }`}
+        >
+          {gif && (
+            <img
+              src={gif}
+              alt={exerciseName || option || row.muscle}
+              loading="lazy"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug">{option}</p>
+            {exerciseName && (
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1 truncate">
+                {exerciseName}
               </span>
-              <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">{row.home}</p>
-              {row.homeExerciseName && (
-                <span className="text-[10px] text-slate-400 block mt-0.5 truncate">{row.homeExerciseName}</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {showGym && hasGym && (
-          <div
-            onClick={() => (row.homeGif || row.gymGif) && onExpand(row)}
-            className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-700 hover:border-indigo-500 cursor-pointer transition"
-          >
-            {row.gymGif && (
-              <img
-                src={row.gymGif}
-                alt={row.gymExerciseName || row.gym}
-                loading="lazy"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
-              />
             )}
-            <div className="min-w-0">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                <BuildingIcon className="w-3 h-3" />
-                <span>Commercial Gym</span>
-              </span>
-              <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 leading-snug">{row.gym}</p>
-              {row.gymExerciseName && (
-                <span className="text-[10px] text-slate-400 block mt-0.5 truncate">{row.gymExerciseName}</span>
-              )}
-            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {row.tips && (
         <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
@@ -89,42 +58,23 @@ function DatasetExerciseCard({ row, equipView, onExpand }) {
   );
 }
 
-function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setExpandedRow, banner }) {
+function StrengthModalSection({ rows, expandedRow, setExpandedRow, banner }) {
+  const expandedDisplay = getPrimaryExerciseDisplay(expandedRow);
+
   return (
     <div className="space-y-3">
       {banner}
 
-      {/* Equipment Mode Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl">
-        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 px-2">
-          ตัวอย่างท่าฝึก (คลิกที่รูปเพื่อขยาย)
+      <div className="flex items-center justify-between gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl">
+        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+          รายการท่าฝึก ({rows.length} ท่า • แตะที่รูปเพื่อขยาย)
         </span>
-        <div className="flex gap-1">
-          {[
-            { id: "home", label: "Home DB" },
-            { id: "gym", label: "Commercial Gym" },
-            { id: "both", label: "เทียบ 2 แบบ" },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => setEquipView(opt.id)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                equipView === opt.id
-                  ? "bg-white dark:bg-slate-900 text-pocariBlue dark:text-sky-400 shadow-xs"
-                  : "text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Expanded Preview Banner */}
-      {expandedRow && (
+      {expandedRow && expandedDisplay.gif && (
         <div className="bg-slate-900 dark:bg-slate-950 text-white rounded-2xl p-4 space-y-3 border border-slate-700">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <span className="text-xs font-bold text-pocariLight">
               {expandedRow.code} • {expandedRow.muscle} ({expandedRow.sets})
             </span>
@@ -136,28 +86,17 @@ function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setE
               ย่อลง
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {expandedRow.homeGif && (
-              <div className="bg-white/10 rounded-xl p-2.5 flex flex-col items-center text-center">
-                <span className="text-[10px] font-bold text-sky-300 mb-1.5">Home Dumbbell</span>
-                <img
-                  src={expandedRow.homeGif}
-                  alt={expandedRow.homeExerciseName || expandedRow.home}
-                  className="w-44 h-44 object-contain bg-white rounded-lg"
-                />
-                <span className="text-[11px] font-semibold mt-1.5">{expandedRow.homeExerciseName}</span>
-              </div>
+          <div className="bg-white/10 rounded-xl p-3 flex flex-col items-center text-center">
+            <img
+              src={expandedDisplay.gif}
+              alt={expandedDisplay.exerciseName || expandedDisplay.option}
+              className="w-48 h-48 sm:w-56 sm:h-56 object-contain bg-white rounded-lg"
+            />
+            {expandedDisplay.option && (
+              <p className="text-xs font-semibold text-white mt-2">{expandedDisplay.option}</p>
             )}
-            {expandedRow.gymGif && (
-              <div className="bg-white/10 rounded-xl p-2.5 flex flex-col items-center text-center">
-                <span className="text-[10px] font-bold text-indigo-300 mb-1.5">Commercial Gym</span>
-                <img
-                  src={expandedRow.gymGif}
-                  alt={expandedRow.gymExerciseName || expandedRow.gym}
-                  className="w-44 h-44 object-contain bg-white rounded-lg"
-                />
-                <span className="text-[11px] font-semibold mt-1.5">{expandedRow.gymExerciseName}</span>
-              </div>
+            {expandedDisplay.exerciseName && (
+              <span className="text-[11px] text-slate-300 mt-0.5">{expandedDisplay.exerciseName}</span>
             )}
           </div>
         </div>
@@ -169,7 +108,6 @@ function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setE
           <DatasetExerciseCard
             key={row.code || idx}
             row={row}
-            equipView={equipView}
             onExpand={(r) => setExpandedRow(expandedRow?.code === r.code ? null : r)}
           />
         ))}
@@ -179,7 +117,6 @@ function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setE
 }
 
 export function GuideModal({ type, weekNum, dayKey = null, planId, plan: propPlan, onClose, weeklyData }) {
-  const [equipView, setEquipView] = useState("both");
   const [expandedRow, setExpandedRow] = useState(null);
 
   useEffect(() => {
@@ -226,8 +163,6 @@ export function GuideModal({ type, weekNum, dayKey = null, planId, plan: propPla
       bodyHTML = (
         <StrengthModalSection
           rows={pstStrengthRows}
-          equipView={equipView}
-          setEquipView={setEquipView}
           expandedRow={expandedRow}
           setExpandedRow={setExpandedRow}
           banner={
@@ -284,8 +219,6 @@ export function GuideModal({ type, weekNum, dayKey = null, planId, plan: propPla
     bodyHTML = (
       <StrengthModalSection
         rows={strengthARows}
-        equipView={equipView}
-        setEquipView={setEquipView}
         expandedRow={expandedRow}
         setExpandedRow={setExpandedRow}
         banner={
@@ -347,8 +280,6 @@ export function GuideModal({ type, weekNum, dayKey = null, planId, plan: propPla
     bodyHTML = (
       <StrengthModalSection
         rows={strengthBRows}
-        equipView={equipView}
-        setEquipView={setEquipView}
         expandedRow={expandedRow}
         setExpandedRow={setExpandedRow}
         banner={

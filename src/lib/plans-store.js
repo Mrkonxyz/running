@@ -83,6 +83,8 @@ function normalizeExercises(rawExercises, existingExercises = []) {
           ? String(ex.homeOption)
           : ex.home !== undefined
           ? String(ex.home)
+          : ex.option !== undefined
+          ? String(ex.option)
           : String(prev?.homeOption ?? "");
       const gymOption =
         ex.gymOption !== undefined
@@ -109,13 +111,19 @@ function normalizeExercises(rawExercises, existingExercises = []) {
         homeExerciseName:
           ex.homeExerciseName !== undefined
             ? String(ex.homeExerciseName)
+            : ex.exerciseName !== undefined
+            ? String(ex.exerciseName)
             : String(prev?.homeExerciseName ?? ""),
         gymExerciseName:
           ex.gymExerciseName !== undefined
             ? String(ex.gymExerciseName)
             : String(prev?.gymExerciseName ?? ""),
         homeGif:
-          ex.homeGif !== undefined ? String(ex.homeGif) : String(prev?.homeGif ?? ""),
+          ex.homeGif !== undefined
+            ? String(ex.homeGif)
+            : ex.gif !== undefined
+            ? String(ex.gif)
+            : String(prev?.homeGif ?? ""),
         gymGif:
           ex.gymGif !== undefined ? String(ex.gymGif) : String(prev?.gymGif ?? ""),
         rehabStage:

@@ -166,15 +166,24 @@ export function mapExerciseToPlaybookRow(ex, fallbackRow = null) {
     targetMuscle: item.targetMuscle || fb.targetMuscle || "",
     sets: formattedSets,
     rir: item.targetRir || item.rir || fb.rir || "1–2 RIR",
-    home: item.homeOption ?? item.home ?? fb.home ?? "",
+    home: item.homeOption ?? item.home ?? item.option ?? fb.home ?? "",
     gym: item.gymOption ?? item.gym ?? fb.gym ?? "",
-    homeExerciseName: item.homeExerciseName ?? fb.homeExerciseName ?? "",
+    homeExerciseName: item.homeExerciseName ?? item.exerciseName ?? fb.homeExerciseName ?? "",
     gymExerciseName: item.gymExerciseName ?? fb.gymExerciseName ?? "",
-    homeGif: item.homeGif ?? fb.homeGif ?? "",
+    homeGif: item.homeGif ?? item.gif ?? fb.homeGif ?? "",
     gymGif: item.gymGif ?? fb.gymGif ?? "",
     tips: item.tips ?? item.note ?? fb.tips ?? "",
     rehabStage: item.rehabStage ?? fb.rehabStage ?? null,
     progression: item.progression ?? fb.progression ?? "",
+  };
+}
+
+export function getPrimaryExerciseDisplay(row) {
+  if (!row) return { option: "", exerciseName: "", gif: "" };
+  return {
+    option: row.home || row.homeOption || row.option || row.gym || row.gymOption || "",
+    exerciseName: row.homeExerciseName || row.exerciseName || row.gymExerciseName || "",
+    gif: row.homeGif || row.gif || row.gymGif || "",
   };
 }
 
