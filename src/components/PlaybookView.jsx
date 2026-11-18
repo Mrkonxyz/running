@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getPlanById } from "../data/plans";
+import { resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
 import { BuildingIcon, CloseIcon, HomeIcon, SearchIcon } from "./Icons.jsx";
 
 function ExerciseGifThumb({ src, alt, onClick, sizeClass ="w-16 h-16" }) {
@@ -413,17 +414,39 @@ function ExerciseLightboxModal({ selection, onClose }) {
   );
 }
 
-export function PlaybookView({ plan }) {
+export function PlaybookView({ plan, currentWeek = 1 }) {
   const playbook = plan.playbook || getPlanById("hybrid-2026")?.playbook;
   const [equipMode, setEquipMode] = useState("all"); // 'all' | 'home' | 'gym'
   const [layoutMode, setLayoutMode] = useState("cards"); // 'cards' | 'table'
   const [selectedExercise, setSelectedExercise] = useState(null);
 
-  const hasStrengthTables = Boolean(playbook?.strengthDayA || playbook?.strengthDayB);
+  const currentWeekObj =
+    plan?.weeks?.find((w) => w.week === currentWeek) || plan?.weeks?.[0] || null;
+  const wedSourceWeek =
+    currentWeekObj?.days?.wed?.exercises?.length
+      ? currentWeekObj
+      : plan?.weeks?.find((w) => w.days?.wed?.exercises?.length > 0) || currentWeekObj;
+  const sunSourceWeek =
+    currentWeekObj?.days?.sun?.exercises?.length
+      ? currentWeekObj
+      : plan?.weeks?.find((w) => w.days?.sun?.exercises?.length > 0) || currentWeekObj;
+
+  const strengthDayARows = resolveStrengthRowsForWeek(
+    wedSourceWeek,
+    "wed",
+    playbook?.strengthDayA || []
+  );
+  const strengthDayBRows = resolveStrengthRowsForWeek(
+    sunSourceWeek,
+    "sun",
+    playbook?.strengthDayB || []
+  );
+
+  const hasStrengthTables = strengthDayARows.length > 0 || strengthDayBRows.length > 0;
 
   const jumpLinks = [
-    playbook?.strengthDayA && { id: "playbook-str-a", label: "Strength A" },
-    playbook?.strengthDayB && { id: "playbook-str-b", label: "Strength B" },
+    strengthDayARows.length > 0 && { id: "playbook-str-a", label: "Strength A" },
+    strengthDayBRows.length > 0 && { id: "playbook-str-b", label: "Strength B" },
     playbook?.nutritionMatrix && { id: "playbook-nutrition", label: "โภชนาการ" },
     playbook?.hrZones && { id: "playbook-zones", label: "โซนหัวใจ & กฎเหล็ก" },
   ].filter(Boolean);
@@ -533,7 +556,7 @@ export function PlaybookView({ plan }) {
       )}
 
       {/* Strength Day A */}
-      {playbook?.strengthDayA &&
+      {strengthDayARows.length > 0 &&
         (layoutMode ==="cards" ? (
           <StrengthCardGrid
             id="playbook-str-a"
@@ -545,7 +568,7 @@ export function PlaybookView({ plan }) {
                 : "Strength Day A: Lower Knee Armor + Upper Push/Pull Thickness"
             }
             extraPill={plan.id ==="pst34-2026" ? null : "ก่อนซ้อม 30–60m: Collagen 15g + Vit C"}
-            rows={playbook.strengthDayA}
+            rows={strengthDayARows}
             codeColorClass="text-purple-700 dark:text-purple-400"
             equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
@@ -561,7 +584,7 @@ export function PlaybookView({ plan }) {
                 : "Strength Day A: Lower Knee Armor + Upper Push/Pull Thickness"
             }
             extraPill={plan.id ==="pst34-2026" ? null : "ก่อนซ้อม 30–60m: Collagen 15g + Vit C"}
-            rows={playbook.strengthDayA}
+            rows={strengthDayARows}
             codeColorClass="text-purple-700 dark:text-purple-400"
             equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
@@ -569,14 +592,14 @@ export function PlaybookView({ plan }) {
         ))}
 
       {/* Strength Day B */}
-      {playbook?.strengthDayB &&
+      {strengthDayBRows.length > 0 &&
         (layoutMode ==="cards" ? (
           <StrengthCardGrid
             id="playbook-str-b"
             badgeText="อาทิตย์ • 50–60 นาที"
             badgeClass="text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60"
             title="Strength Day B: Upper Body V-Taper + Glutes & Core"
-            rows={playbook.strengthDayB}
+            rows={strengthDayBRows}
             codeColorClass="text-indigo-700 dark:text-indigo-400"
             equipMode={equipMode}
             onSelectExercise={setSelectedExercise}
@@ -587,7 +610,7 @@ export function PlaybookView({ plan }) {
             badgeText="อาทิตย์ • 50–60 นาที"
             badgeClass="text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60"
             title="Strength Day B: Upper Body V-Taper + Glutes & Core"
-            rows={playbook.strengthDayB}
+            rows={strengthDayBRows}
             codeColorClass="text-indigo-700 dark:text-indigo-400"
             equipMode={equipMode}
             onSelectExercise={setSelectedExercise}

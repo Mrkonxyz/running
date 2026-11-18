@@ -142,17 +142,27 @@ export const MCP_SERVER_INFO = {
 const EXERCISE_ITEM_SCHEMA = {
   type: "object",
   properties: {
-    code: { type: "string", description: "Exercise code e.g. 'A1', 'B2'." },
-    name: { type: "string", description: "Exercise display name." },
-    sets: { type: "string", description: "Target sets x reps e.g. '3 x 8-12'." },
-    targetRir: { type: "string", description: "Target RIR e.g. '1-2 RIR'." },
+    code: { type: "string", description: "Exercise code e.g. 'A1', 'B2'. Unpassed fields merge/preserve existing values for matching code." },
+    name: { type: "string", description: "Exercise display name / muscle focus." },
+    targetMuscle: { type: "string", description: "Optional target muscle subtitle." },
+    sets: {
+      anyOf: [{ type: "integer" }, { type: "string" }],
+      description: "Target sets count (e.g. 3) or formatted '3 × 8–12'.",
+    },
+    repRange: { type: "string", description: "Rep range e.g. '8–12', '10–15'." },
+    targetRir: { type: "string", description: "Target RIR e.g. '1–2 RIR'." },
     tempo: { type: "string", description: "Optional tempo e.g. '3-1-1-0'." },
     restSec: { type: "integer", description: "Rest interval in seconds." },
     homeOption: { type: "string", description: "Home dumbbell/bodyweight option." },
     gymOption: { type: "string", description: "Commercial gym option." },
+    homeExerciseName: { type: "string", description: "Dataset reference name for the Home demo GIF (preserved if omitted)." },
+    gymExerciseName: { type: "string", description: "Dataset reference name for the Gym demo GIF (preserved if omitted)." },
+    homeGif: { type: "string", description: "URL to Home demonstration GIF (preserved if omitted)." },
+    gymGif: { type: "string", description: "URL to Commercial Gym demonstration GIF (preserved if omitted)." },
     rehabStage: { type: "string", description: "Optional knee rehab stage note." },
     progression: { type: "string", description: "Progression cue." },
-    note: { type: "string", description: "Form cue or safety note." },
+    tips: { type: "string", description: "Technique cue / safety note." },
+    note: { type: "string", description: "Alias for tips/safety note." },
   },
 };
 

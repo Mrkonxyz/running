@@ -284,7 +284,7 @@ export function WeekCard({
 
                 <button
                   type="button"
-                  onClick={() => onOpenGuide(day.guideType, week.week)}
+                  onClick={() => onOpenGuide(day.guideType, week.week, day.dayKey)}
                   className="mt-2.5 w-full min-h-[38px] sm:min-h-0 flex items-center justify-between text-left text-xs sm:text-[11px] font-semibold text-pocariBlue dark:text-sky-400 hover:underline pt-2 border-t border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
                 >
                   <span>ดูท่าซ้อม &amp; GIF</span>

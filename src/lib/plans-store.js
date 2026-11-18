@@ -24,23 +24,119 @@ function sanitizeSlug(input, fallback = "custom-plan") {
   return cleaned || fallback;
 }
 
-function normalizeExercises(rawExercises) {
+function normalizeExercises(rawExercises, existingExercises = []) {
   if (!Array.isArray(rawExercises)) return undefined;
+  const prevByCode = new Map();
+  if (Array.isArray(existingExercises)) {
+    for (const prev of existingExercises) {
+      if (prev?.code) {
+        prevByCode.set(String(prev.code).trim().toUpperCase(), prev);
+      }
+    }
+  }
+
   return rawExercises
     .filter((ex) => ex && typeof ex === "object")
-    .map((ex, idx) => ({
-      code: String(ex.code || `E${idx + 1}`),
-      name: String(ex.name || ex.muscle || `Exercise ${idx + 1}`),
-      sets: ex.sets !== undefined ? Number(ex.sets) : 3,
-      repRange: String(ex.repRange || ex.reps || "8–12"),
-      targetRir: String(ex.targetRir || ex.rir || "1–2 RIR"),
-      tempo: ex.tempo ? String(ex.tempo) : null,
-      restSec: ex.restSec !== undefined ? Number(ex.restSec) : 90,
-      homeOption: String(ex.homeOption || ex.home || ""),
-      gymOption: String(ex.gymOption || ex.gym || ""),
-      rehabStage: ex.rehabStage ? String(ex.rehabStage) : null,
-      tips: ex.tips ? String(ex.tips) : "",
-    }));
+    .map((ex, idx) => {
+      const code = String(ex.code || `E${idx + 1}`).trim();
+      const prev = prevByCode.get(code.toUpperCase()) || null;
+
+      let parsedSets = prev?.sets ?? 3;
+      let parsedRepRange = prev?.repRange ?? "8–12";
+      if (ex.sets !== undefined) {
+        if (typeof ex.sets === "number" && Number.isFinite(ex.sets)) {
+          parsedSets = ex.sets;
+        } else if (typeof ex.sets === "string") {
+          const sMatch = /^(\d+)\s*[×xX]\s*(.+)$/.exec(ex.sets.trim());
+          if (sMatch) {
+            parsedSets = Number.parseInt(sMatch[1], 10);
+            if (ex.repRange === undefined && ex.reps === undefined) {
+              parsedRepRange = sMatch[2].trim();
+            }
+          } else if (Number.isFinite(Number(ex.sets))) {
+            parsedSets = Number(ex.sets);
+          }
+        }
+      }
+
+      const name =
+        ex.name !== undefined
+          ? String(ex.name)
+          : ex.muscle !== undefined
+          ? String(ex.muscle)
+          : prev?.name || `Exercise ${idx + 1}`;
+      const repRange =
+        ex.repRange !== undefined
+          ? String(ex.repRange)
+          : ex.reps !== undefined
+          ? String(ex.reps)
+          : String(parsedRepRange);
+      const targetRir =
+        ex.targetRir !== undefined
+          ? String(ex.targetRir)
+          : ex.rir !== undefined
+          ? String(ex.rir)
+          : String(prev?.targetRir || "1–2 RIR");
+
+      const homeOption =
+        ex.homeOption !== undefined
+          ? String(ex.homeOption)
+          : ex.home !== undefined
+          ? String(ex.home)
+          : String(prev?.homeOption ?? "");
+      const gymOption =
+        ex.gymOption !== undefined
+          ? String(ex.gymOption)
+          : ex.gym !== undefined
+          ? String(ex.gym)
+          : String(prev?.gymOption ?? "");
+
+      return {
+        code,
+        name,
+        ...(ex.targetMuscle !== undefined
+          ? { targetMuscle: String(ex.targetMuscle) }
+          : prev?.targetMuscle
+          ? { targetMuscle: prev.targetMuscle }
+          : {}),
+        sets: parsedSets,
+        repRange,
+        targetRir,
+        tempo: ex.tempo !== undefined ? (ex.tempo ? String(ex.tempo) : null) : (prev?.tempo ?? null),
+        restSec: ex.restSec !== undefined ? Number(ex.restSec) : (prev?.restSec ?? 90),
+        homeOption,
+        gymOption,
+        homeExerciseName:
+          ex.homeExerciseName !== undefined
+            ? String(ex.homeExerciseName)
+            : String(prev?.homeExerciseName ?? ""),
+        gymExerciseName:
+          ex.gymExerciseName !== undefined
+            ? String(ex.gymExerciseName)
+            : String(prev?.gymExerciseName ?? ""),
+        homeGif:
+          ex.homeGif !== undefined ? String(ex.homeGif) : String(prev?.homeGif ?? ""),
+        gymGif:
+          ex.gymGif !== undefined ? String(ex.gymGif) : String(prev?.gymGif ?? ""),
+        rehabStage:
+          ex.rehabStage !== undefined
+            ? ex.rehabStage
+              ? String(ex.rehabStage)
+              : null
+            : (prev?.rehabStage ?? null),
+        ...(ex.progression !== undefined
+          ? { progression: String(ex.progression) }
+          : prev?.progression
+          ? { progression: prev.progression }
+          : {}),
+        ...(ex.note !== undefined
+          ? { note: String(ex.note) }
+          : prev?.note
+          ? { note: prev.note }
+          : {}),
+        tips: ex.tips !== undefined ? String(ex.tips) : String(prev?.tips ?? ""),
+      };
+    });
 }
 
 function syncFlatFieldsFromDays(targetWeek, daysMap) {
@@ -178,7 +274,9 @@ export function normalizeWeek(rawPatch = {}, fallbackNum = 1, baseWeek = null, p
       if (patchDay.target !== undefined) targetVal = String(patchDay.target);
       if (patchDay.detail !== undefined) detailVal = String(patchDay.detail);
       if (patchDay.durationMin !== undefined) durationVal = Number(patchDay.durationMin);
-      if (patchDay.exercises !== undefined) exercisesVal = normalizeExercises(patchDay.exercises) || [];
+      if (patchDay.exercises !== undefined) {
+        exercisesVal = normalizeExercises(patchDay.exercises, existingStructured.exercises) || [];
+      }
     }
 
     nextDays[key] = {

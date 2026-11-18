@@ -971,7 +971,7 @@ export function TrainingHubApp({
                 </div>
               ))}
             </div>
-            <PlaybookView plan={activePlan} />
+            <PlaybookView plan={activePlan} currentWeek={currentWeek} />
           </>
         ) : scheduleScope === "day" ? (
           <div className="max-w-2xl mx-auto space-y-4">
@@ -1240,6 +1240,7 @@ export function TrainingHubApp({
                           setModalGuide({
                             type: focusedPrescription.type,
                             weekNum: focusedWeekObj.week,
+                            dayKey: focusedPrescription.dayKey,
                           })
                         }
                         className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 text-sm font-medium transition cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98]"
@@ -1338,7 +1339,13 @@ export function TrainingHubApp({
                           <>
                             <button
                               type="button"
-                              onClick={() => setModalGuide({ type: todaySpotlight.type, weekNum: currentWeek })}
+                              onClick={() =>
+                                setModalGuide({
+                                  type: todaySpotlight.type,
+                                  weekNum: currentWeek,
+                                  dayKey: todaySpotlight.dayKey,
+                                })
+                              }
                               className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-pocariBlue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-sm transition cursor-pointer inline-flex items-center justify-center gap-2"
                             >
                               <BookOpenIcon className="w-4 h-4" />
@@ -1436,7 +1443,7 @@ export function TrainingHubApp({
                       executionLogs={executionLogsState}
                       onToggleDay={handleToggleDay}
                       onToggleWeekAll={handleToggleWeekAll}
-                      onOpenGuide={(type, weekNum) => setModalGuide({ type, weekNum })}
+                      onOpenGuide={(type, weekNum, dayKey) => setModalGuide({ type, weekNum, dayKey })}
                       startDateStr={activePlan.startDateStr}
                       isCurrentWeek={activePlan.status ==="active" && w.week === currentWeek}
                       todayDayType={activePlan.status ==="active" && w.week === currentWeek ? JS_DAY_TO_KEY[jsDay] : null}
@@ -1490,6 +1497,7 @@ export function TrainingHubApp({
         <GuideModal
           type={modalGuide.type}
           weekNum={modalGuide.weekNum}
+          dayKey={modalGuide.dayKey || null}
           planId={activePlan.id}
           plan={activePlan}
           onClose={() => setModalGuide(null)}

@@ -141,6 +141,64 @@ export function mapPlaybookRowToExercise(row) {
   };
 }
 
+export function mapExerciseToPlaybookRow(ex, fallbackRow = null) {
+  if (!ex && !fallbackRow) return null;
+  const item = ex || {};
+  const fb = fallbackRow || {};
+
+  let formattedSets = fb.sets || "3 × 8–12";
+  if (typeof item.sets === "string" && item.sets.trim()) {
+    formattedSets = item.sets.trim();
+  } else if (item.sets !== undefined && item.sets !== null) {
+    const repRange =
+      item.repRange ||
+      fb.sets?.split("×")?.[1]?.trim() ||
+      "8–12";
+    formattedSets = `${item.sets} × ${repRange}`;
+  } else if (item.repRange) {
+    const setsCount = fb.sets?.split("×")?.[0]?.trim() || "3";
+    formattedSets = `${setsCount} × ${item.repRange}`;
+  }
+
+  return {
+    code: item.code || fb.code || "",
+    muscle: item.name || item.muscle || fb.muscle || item.code || "",
+    targetMuscle: item.targetMuscle || fb.targetMuscle || "",
+    sets: formattedSets,
+    rir: item.targetRir || item.rir || fb.rir || "1–2 RIR",
+    home: item.homeOption ?? item.home ?? fb.home ?? "",
+    gym: item.gymOption ?? item.gym ?? fb.gym ?? "",
+    homeExerciseName: item.homeExerciseName ?? fb.homeExerciseName ?? "",
+    gymExerciseName: item.gymExerciseName ?? fb.gymExerciseName ?? "",
+    homeGif: item.homeGif ?? fb.homeGif ?? "",
+    gymGif: item.gymGif ?? fb.gymGif ?? "",
+    tips: item.tips ?? item.note ?? fb.tips ?? "",
+    rehabStage: item.rehabStage ?? fb.rehabStage ?? null,
+    progression: item.progression ?? fb.progression ?? "",
+  };
+}
+
+export function resolveStrengthRowsForWeek(weekObj, dayKey, fallbackRows = []) {
+  const safeFallback = Array.isArray(fallbackRows) ? fallbackRows : [];
+  const fallbackByCode = new Map(
+    safeFallback
+      .filter((r) => r?.code)
+      .map((r) => [String(r.code).trim().toUpperCase(), r])
+  );
+
+  const dayExercises = weekObj?.days?.[dayKey]?.exercises;
+  if (Array.isArray(dayExercises) && dayExercises.length > 0) {
+    return dayExercises
+      .map((ex) => {
+        const codeKey = ex?.code ? String(ex.code).trim().toUpperCase() : "";
+        return mapExerciseToPlaybookRow(ex, codeKey ? fallbackByCode.get(codeKey) : null);
+      })
+      .filter(Boolean);
+  }
+
+  return safeFallback;
+}
+
 function parseDurationHint(text) {
   const m = /(\d+)\s*[-–]?\s*(\d+)?\s*m\b/i.exec(String(text || ""));
   if (!m) return null;

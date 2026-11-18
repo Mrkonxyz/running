@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { getPlanById } from "../data/plans";
-import { BuildingIcon, CloseIcon, HomeIcon } from "./Icons.jsx";
+import { resolveStrengthRowsForWeek } from "../lib/schedule-utils.js";
+import { BuildingIcon, CloseIcon, HomeIcon, SearchIcon } from "./Icons.jsx";
 
 function DatasetExerciseCard({ row, equipView, onExpand }) {
-  const showHome = equipView ==="both" || equipView ==="home";
-  const showGym = equipView ==="both" || equipView ==="gym";
+  const showHome = equipView === "both" || equipView === "home";
+  const showGym = equipView === "both" || equipView === "gym";
+  const hasHome = Boolean(row.homeGif || row.home);
+  const hasGym = Boolean(row.gymGif || row.gym);
 
   return (
     <div className="bg-slate-50/80 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
@@ -23,18 +26,20 @@ function DatasetExerciseCard({ row, equipView, onExpand }) {
         </div>
       </div>
 
-      <div className={`grid gap-2 ${showHome && showGym ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
-        {showHome && row.homeGif && (
+      <div className={`grid gap-2 ${showHome && showGym && hasHome && hasGym ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+        {showHome && hasHome && (
           <div
-            onClick={() => onExpand(row)}
+            onClick={() => (row.homeGif || row.gymGif) && onExpand(row)}
             className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-700 hover:border-pocariBlue dark:hover:border-sky-400 cursor-pointer transition"
           >
-            <img
-              src={row.homeGif}
-              alt={row.homeExerciseName || row.home}
-              loading="lazy"
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
-            />
+            {row.homeGif && (
+              <img
+                src={row.homeGif}
+                alt={row.homeExerciseName || row.home}
+                loading="lazy"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
+              />
+            )}
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pocariBlue dark:text-sky-400">
                 <HomeIcon className="w-3 h-3" />
@@ -48,17 +53,19 @@ function DatasetExerciseCard({ row, equipView, onExpand }) {
           </div>
         )}
 
-        {showGym && row.gymGif && (
+        {showGym && hasGym && (
           <div
-            onClick={() => onExpand(row)}
+            onClick={() => (row.homeGif || row.gymGif) && onExpand(row)}
             className="flex items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-700 hover:border-indigo-500 cursor-pointer transition"
           >
-            <img
-              src={row.gymGif}
-              alt={row.gymExerciseName || row.gym}
-              loading="lazy"
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
-            />
+            {row.gymGif && (
+              <img
+                src={row.gymGif}
+                alt={row.gymExerciseName || row.gym}
+                loading="lazy"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-contain bg-white border border-slate-100 flex-shrink-0"
+              />
+            )}
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
                 <BuildingIcon className="w-3 h-3" />
@@ -158,9 +165,9 @@ function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setE
 
       {/* Exercise Cards */}
       <div className="space-y-2.5">
-        {rows.map((row) => (
+        {rows.map((row, idx) => (
           <DatasetExerciseCard
-            key={row.code}
+            key={row.code || idx}
             row={row}
             equipView={equipView}
             onExpand={(r) => setExpandedRow(expandedRow?.code === r.code ? null : r)}
@@ -171,7 +178,7 @@ function StrengthModalSection({ rows, equipView, setEquipView, expandedRow, setE
   );
 }
 
-export function GuideModal({ type, weekNum, planId, plan: propPlan, onClose, weeklyData }) {
+export function GuideModal({ type, weekNum, dayKey = null, planId, plan: propPlan, onClose, weeklyData }) {
   const [equipView, setEquipView] = useState("both");
   const [expandedRow, setExpandedRow] = useState(null);
 
@@ -198,17 +205,27 @@ export function GuideModal({ type, weekNum, planId, plan: propPlan, onClose, wee
   const isPhase0 = wObj?.phase ==="recovery";
   const isPst34 = planId ==="pst34-2026";
 
+  const strDayKey =
+    dayKey ||
+    (wObj?.days ? Object.keys(wObj.days).find((k) => wObj.days[k]?.type === "strength_a") : null) ||
+    "wed";
+  const recDayKey =
+    dayKey ||
+    (wObj?.days ? Object.keys(wObj.days).find((k) => wObj.days[k]?.type === "strength_b") : null) ||
+    "sun";
+
   let labelTxt ="";
   let titleTxt ="";
   let bodyHTML = null;
 
   if (isPst34 && wObj) {
-    if (type ==="str" && plan.playbook?.strengthDayA) {
+    const pstStrengthRows = resolveStrengthRowsForWeek(wObj, strDayKey, plan?.playbook?.strengthDayA || []);
+    if (type ==="str" && pstStrengthRows.length > 0) {
       labelTxt ="พุธ • Lower & Upper Strength (PST34)";
       titleTxt ="เวทเข่าเฟิร์ม + ช่วงบนรับเป้น้ำ (พร้อม GIF สาธิต)";
       bodyHTML = (
         <StrengthModalSection
-          rows={plan.playbook.strengthDayA}
+          rows={pstStrengthRows}
           equipView={equipView}
           setEquipView={setEquipView}
           expandedRow={expandedRow}
@@ -263,9 +280,10 @@ export function GuideModal({ type, weekNum, planId, plan: propPlan, onClose, wee
   } else if (type ==="str") {
     labelTxt ="พุธ • Strength Day A (55–60 นาที)";
     titleTxt ="Lower Knee Armor + Upper Push/Pull Thickness";
+    const strengthARows = resolveStrengthRowsForWeek(wObj, strDayKey, activePlaybook?.strengthDayA || []);
     bodyHTML = (
       <StrengthModalSection
-        rows={activePlaybook?.strengthDayA || []}
+        rows={strengthARows}
         equipView={equipView}
         setEquipView={setEquipView}
         expandedRow={expandedRow}
@@ -325,9 +343,10 @@ export function GuideModal({ type, weekNum, planId, plan: propPlan, onClose, wee
   } else if (type ==="rec") {
     labelTxt ="อาทิตย์ • Strength Day B (50–60 นาที)";
     titleTxt ="Upper Body V-Taper + Glutes & Core";
+    const strengthBRows = resolveStrengthRowsForWeek(wObj, recDayKey, activePlaybook?.strengthDayB || []);
     bodyHTML = (
       <StrengthModalSection
-        rows={activePlaybook?.strengthDayB || []}
+        rows={strengthBRows}
         equipView={equipView}
         setEquipView={setEquipView}
         expandedRow={expandedRow}
