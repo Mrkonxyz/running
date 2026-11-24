@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PLANS } from "../data/plans/index.js";
 import { WeekCard } from "./WeekCard.jsx";
 import { GuideModal } from "./GuideModal.jsx";
+import { WorkoutGuideInlineCard } from "./WorkoutGuideContent.jsx";
 import { PlaybookView } from "./PlaybookView.jsx";
 import { YearlyView } from "./YearlyView.jsx";
 import { LoginModal } from "./LoginModal.jsx";
@@ -619,6 +620,32 @@ export function TrainingHubApp({
   const isViewingToday = activePlan.status ==="active" && focusedWeek === currentWeek && focusedDay === jsDay;
   const WEEK_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
+  const nextActiveForRest = (() => {
+    if (!focusedPrescription?.isRest || !focusedWeekObj) return null;
+    const startIdx = WEEK_DAY_ORDER.indexOf(focusedDay);
+    for (let offset = 1; offset <= 7; offset += 1) {
+      const idx = startIdx + offset;
+      const candidateWeekNum = idx < 7 ? focusedWeekObj.week : focusedWeekObj.week + 1;
+      const candidateWeek = activePlan.weeks.find((w) => w.week === candidateWeekNum) || focusedWeekObj;
+      const candidateDayNum = WEEK_DAY_ORDER[idx % 7];
+      const candidate = getPrescriptionForWeekDay(candidateWeek, candidateDayNum, activePlan.id);
+      if (candidate && !candidate.isRest) {
+        return {
+          type: candidate.type,
+          weekNum: candidateWeek.week,
+          dayKey: candidate.dayKey,
+          label: candidate.label,
+        };
+      }
+    }
+    return {
+      type: focusedPrescription.nextGuideType || "str",
+      weekNum: focusedWeekObj.week,
+      dayKey: null,
+      label: "",
+    };
+  })();
+
   if (!user) {
     return (
       <div className="text-zinc-950 dark:text-zinc-50 antialiased min-h-screen bg-[#fafafa] dark:bg-zinc-950 flex flex-col overflow-x-hidden transition-colors duration-200">
@@ -1146,7 +1173,7 @@ export function TrainingHubApp({
                     : "border-zinc-200 dark:border-zinc-800"
                 }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`text-[11px] font-medium px-2.5 py-0.5 rounded-md ${
@@ -1161,11 +1188,29 @@ export function TrainingHubApp({
                       {focusedDateLabel}
                     </span>
                   </div>
-                  {isFocusedCompleted && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      <CheckIcon className="w-3 h-3" />
-                      <span>เสร็จแล้ว</span>
-                    </span>
+                  {!focusedPrescription.isRest && (
+                    <button
+                      type="button"
+                      onClick={() => focusedKey && handleToggleDay(focusedKey)}
+                      aria-pressed={isFocusedCompleted}
+                      className={`w-full sm:w-auto min-h-[40px] sm:min-h-[36px] px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium border transition cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98] flex-shrink-0 ${
+                        isFocusedCompleted
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
+                          : "bg-[#1d4ed8] hover:bg-[#1e40af] text-white border-[#1d4ed8] shadow-xs"
+                      }`}
+                    >
+                      {isFocusedCompleted ? (
+                        <>
+                          <CheckIcon className="w-3.5 h-3.5" />
+                          <span>ซ้อมเสร็จแล้ว (แตะเพื่อยกเลิก)</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-3 h-3 rounded-full border-2 border-current" aria-hidden="true" />
+                          <span>บันทึกว่าซ้อมเสร็จแล้ว</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
 
@@ -1194,63 +1239,28 @@ export function TrainingHubApp({
                   )}
                 </div>
 
-                {/* Primary Day Actions */}
-                <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-                  {focusedPrescription.isRest ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setModalGuide({
-                          type: focusedPrescription.nextGuideType || "str",
-                          weekNum: focusedWeekObj.week,
-                        })
-                      }
-                      className="w-full min-h-[44px] px-4 py-2.5 rounded-lg bg-[#1d4ed8] hover:bg-[#1e40af] text-white text-sm font-medium shadow-xs transition cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                      <DumbbellIcon className="w-4 h-4" />
-                      <span>เตรียมดูท่าซ้อมวันถัดไป</span>
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => focusedKey && handleToggleDay(focusedKey)}
-                        aria-pressed={isFocusedCompleted}
-                        className={`w-full sm:flex-1 min-h-[44px] px-4 py-2.5 rounded-lg text-sm font-medium border transition cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98] ${
-                          isFocusedCompleted
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
-                            : "bg-[#1d4ed8] hover:bg-[#1e40af] text-white border-[#1d4ed8] shadow-xs"
-                        }`}
-                      >
-                        {isFocusedCompleted ? (
-                          <>
-                            <CheckIcon className="w-4 h-4" />
-                            <span>ซ้อมเสร็จแล้ว (แตะเพื่อยกเลิก)</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="w-3.5 h-3.5 rounded-full border-2 border-current" aria-hidden="true" />
-                            <span>บันทึกว่าซ้อมเสร็จแล้ว</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModalGuide({
-                            type: focusedPrescription.type,
-                            weekNum: focusedWeekObj.week,
-                            dayKey: focusedPrescription.dayKey,
-                          })
-                        }
-                        className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-lg bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 text-sm font-medium transition cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98]"
-                      >
-                        <BookOpenIcon className="w-4 h-4" />
-                        <span>ดูท่าซ้อม &amp; GIF</span>
-                      </button>
-                    </>
-                  )}
-                </div>
+                {/* Expanded Inline Workout Detail (inside the same card) */}
+                {focusedPrescription.isRest && nextActiveForRest ? (
+                  <WorkoutGuideInlineCard
+                    type={nextActiveForRest.type}
+                    weekNum={nextActiveForRest.weekNum}
+                    dayKey={nextActiveForRest.dayKey}
+                    planId={activePlan.id}
+                    plan={activePlan}
+                    weeklyData={activePlan.weeks}
+                    isNextDayPreview
+                    nextDayLabel={nextActiveForRest.label}
+                  />
+                ) : !focusedPrescription.isRest ? (
+                  <WorkoutGuideInlineCard
+                    type={focusedPrescription.type}
+                    weekNum={focusedWeekObj.week}
+                    dayKey={focusedPrescription.dayKey}
+                    planId={activePlan.id}
+                    plan={activePlan}
+                    weeklyData={activePlan.weeks}
+                  />
+                ) : null}
               </section>
             )}
           </div>
