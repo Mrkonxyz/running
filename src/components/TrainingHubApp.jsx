@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS } from "../data/plans/index.js";
 import { WeekCard } from "./WeekCard.jsx";
@@ -620,6 +620,91 @@ export function TrainingHubApp({
   const isViewingToday = activePlan.status ==="active" && focusedWeek === currentWeek && focusedDay === jsDay;
   const WEEK_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
+  const [swipeOffsetX, setSwipeOffsetX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const swipeTouchRef = useRef({
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    axis: null, // 'x' | 'y' | null
+    lastDx: 0,
+  });
+
+  const stepFocusedDay = (delta) => {
+    const idx = WEEK_DAY_ORDER.indexOf(focusedDay);
+    if (idx === -1) return;
+    const nextIdx = idx + delta;
+    if (nextIdx >= 0 && nextIdx < 7) {
+      setFocusedDay(WEEK_DAY_ORDER[nextIdx]);
+    } else if (nextIdx >= 7 && focusedWeek < activePlan.weeks.length) {
+      setFocusedWeek((w) => Math.min(activePlan.weeks.length, w + 1));
+      setFocusedDay(WEEK_DAY_ORDER[0]);
+    } else if (nextIdx < 0 && focusedWeek > 1) {
+      setFocusedWeek((w) => Math.max(1, w - 1));
+      setFocusedDay(WEEK_DAY_ORDER[6]);
+    }
+  };
+
+  const handleDayCardTouchStart = (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    swipeTouchRef.current = {
+      startX: t.clientX,
+      startY: t.clientY,
+      startTime: Date.now(),
+      axis: null,
+      lastDx: 0,
+    };
+    setIsSwiping(false);
+    setSwipeOffsetX(0);
+  };
+
+  const handleDayCardTouchMove = (e) => {
+    if (e.touches.length !== 1) return;
+    const state = swipeTouchRef.current;
+    if (state.axis === "y") return;
+    const t = e.touches[0];
+    const dx = t.clientX - state.startX;
+    const dy = t.clientY - state.startY;
+
+    if (!state.axis) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if (Math.abs(dx) > Math.abs(dy) * 1.2) {
+        state.axis = "x";
+        setIsSwiping(true);
+      } else {
+        state.axis = "y";
+        return;
+      }
+    }
+
+    if (state.axis === "x") {
+      state.lastDx = dx;
+      const idx = WEEK_DAY_ORDER.indexOf(focusedDay);
+      const atStartEdge = focusedWeek <= 1 && idx === 0 && dx > 0;
+      const atEndEdge = focusedWeek >= activePlan.weeks.length && idx === 6 && dx < 0;
+      const damping = atStartEdge || atEndEdge ? 0.2 : 0.45;
+      const clamped = Math.max(-64, Math.min(64, dx * damping));
+      setSwipeOffsetX(clamped);
+    }
+  };
+
+  const handleDayCardTouchEnd = () => {
+    const state = swipeTouchRef.current;
+    if (state.axis === "x") {
+      const dx = state.lastDx;
+      const dt = Date.now() - state.startTime;
+      const isSwipe = Math.abs(dx) >= 50 || (Math.abs(dx) >= 30 && dt < 250);
+      if (isSwipe) {
+        stepFocusedDay(dx < 0 ? 1 : -1);
+      }
+    }
+    swipeTouchRef.current.axis = null;
+    swipeTouchRef.current.lastDx = 0;
+    setIsSwiping(false);
+    setSwipeOffsetX(0);
+  };
+
   const nextActiveForRest = (() => {
     if (!focusedPrescription?.isRest || !focusedWeekObj) return null;
     const startIdx = WEEK_DAY_ORDER.indexOf(focusedDay);
@@ -1163,11 +1248,20 @@ export function TrainingHubApp({
               </div>
             </div>
 
-            {/* Single Focused Day Card */}
+            {/* Single Focused Day Card (swipe left/right on mobile to switch days) */}
             {focusedPrescription && (
               <section
                 aria-label="โปรแกรมซ้อมประจำวัน"
-                className={`bg-white dark:bg-zinc-900 rounded-xl p-5 sm:p-6 border shadow-xs space-y-4 ${
+                onTouchStart={handleDayCardTouchStart}
+                onTouchMove={handleDayCardTouchMove}
+                onTouchEnd={handleDayCardTouchEnd}
+                onTouchCancel={handleDayCardTouchEnd}
+                style={{
+                  transform: swipeOffsetX ? `translate3d(${swipeOffsetX}px, 0, 0)` : undefined,
+                }}
+                className={`touch-pan-y bg-white dark:bg-zinc-900 rounded-xl p-5 sm:p-6 border shadow-xs space-y-4 ${
+                  isSwiping ? "transition-none" : "transition-transform duration-200 ease-out"
+                } ${
                   isFocusedCompleted
                     ? "border-emerald-500/50 dark:border-emerald-600/60"
                     : "border-zinc-200 dark:border-zinc-800"
@@ -1261,6 +1355,10 @@ export function TrainingHubApp({
                     weeklyData={activePlan.weeks}
                   />
                 ) : null}
+
+                <p className="sm:hidden text-[11px] text-center text-zinc-400 dark:text-zinc-500 pt-1 select-none">
+                  ← ปัดซ้าย-ขวาเพื่อเปลี่ยนวัน →
+                </p>
               </section>
             )}
           </div>
